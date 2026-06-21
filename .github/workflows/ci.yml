@@ -19,6 +19,16 @@ jobs:
       - name: Lint imprint and install.sh
         run: shellcheck imprint install.sh
 
+  markdown:
+    name: Markdown lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # node ships preinstalled on GitHub-hosted ubuntu runners; markdownlint-cli2
+      # reads .markdownlint-cli2.yaml for the globs and the repo's rule set.
+      - name: Lint Markdown
+        run: npx --yes markdownlint-cli2
+
   render:
     name: Render smoke test
     runs-on: ubuntu-latest

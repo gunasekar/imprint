@@ -4,7 +4,7 @@ BINDIR := $(PREFIX)/bin
 # Where Claude Code looks for user slash commands (override with CMDDIR=...).
 CMDDIR ?= $(HOME)/.claude/commands
 
-.PHONY: install uninstall command uninstall-command check example config profile preview
+.PHONY: install uninstall command uninstall-command check lint-md example config profile preview
 
 ## Symlink imprint onto your PATH (override with PREFIX=~/.local)
 install:
@@ -51,6 +51,10 @@ command:
 uninstall-command:
 	@rm -f "$(CMDDIR)/imprint.md"
 	@echo "removed $(CMDDIR)/imprint.md"
+
+## Lint the Markdown docs (rules + globs in .markdownlint-cli2.yaml; needs node/npx)
+lint-md:
+	npx --yes markdownlint-cli2
 
 ## Verify required tools are present
 check:

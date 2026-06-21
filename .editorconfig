@@ -1,0 +1,19 @@
+# EditorConfig — portable, cross-editor whitespace baseline (https://editorconfig.org).
+# Honored natively or via plugin by every major editor, so it isn't editor lock-in.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# Markdown: a trailing double-space is a hard line break, so don't trim it.
+[*.md]
+trim_trailing_whitespace = false
+
+# Makefiles require real tabs.
+[Makefile]
+indent_style = tab

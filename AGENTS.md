@@ -15,6 +15,7 @@ brand-free and public-safe.
 make install   # symlink ./imprint onto PATH, then report prerequisite status
 make config    # scaffold ~/.config/imprint/config.yaml from the example
 make check     # verify prereqs: pandoc, python3, typst (+ mmdc for Mermaid)
+make lint-md   # lint the Markdown docs (CI runs this too; needs node/npx)
 make example   # render examples/sample.md -> examples/sample.pdf
 ```
 

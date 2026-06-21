@@ -1,0 +1,35 @@
+# markdownlint config — enforce Markdown *structure* across contributors without
+# reformatting the hand-authored docs. Read by markdownlint-cli2 (the CI job) and
+# by the markdownlint editor extensions. Run locally with: npx markdownlint-cli2
+globs:
+  - "**/*.md"
+gitignore: true # honor .gitignore — skip .tmp/ scratch, node_modules, etc.
+
+# Rules below are off because the repo's docs use them deliberately; everything
+# else (heading levels, blanks around blocks, trailing spaces, duplicate headings,
+# final newline, …) stays on.
+config:
+  default: true
+
+  # Compact tables are intentional — pipes are not column-aligned (aligning them
+  # makes every cell edit re-pad the whole column, producing noisy diffs).
+  MD060: false
+
+  # Prose is hand-wrapped at ~72 cols, but tables, image rows, and URLs run long.
+  # Line length is a style choice here, not a defect.
+  MD013: false
+
+  # The README's snapshot grid uses <img> for sizing/centering; front matter uses
+  # <!-- … --> comments. Inline HTML is deliberate.
+  MD033: false
+
+  # ASCII diagrams and layout blocks use bare ``` fences with no language.
+  MD040: false
+
+  # The docs lead with bold labels (**Note.**, **Scope:**, **macOS (Homebrew)**)
+  # rather than headings — a deliberate, pervasive style.
+  MD036: false
+
+  # Not every file is an article: slash commands (commands/*.md) carry YAML front
+  # matter and no H1, and other docs lead with an <!-- front matter --> comment.
+  MD041: false
