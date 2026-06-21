@@ -9,7 +9,8 @@
 #let accent      = rgb("$if(accent)$$accent$$else$#2563EB$endif$")
 #let accent-dark = accent.darken(22%)
 #let accent-soft = accent.lighten(90%)   // callout / table-head tint
-#let heading-ink = rgb("#111827")  // graphite-900 — headings
+#let accent-bright = accent.lighten(28%) // lifted accent for highlights on the dark gradient cover
+#let heading-ink = rgb("#111827")  // graphite-900 — table-head text, light-cover title
 #let ink         = rgb("#1F2937")  // graphite-800 — body text
 #let muted       = rgb("#6B7280")  // labels, captions, footer
 #let faint       = rgb("#9CA3AF")  // tertiary chrome
@@ -35,13 +36,16 @@
 #let logo-height = ($if(logo_height)$$logo_height$$else$40$endif$) * 1pt
 // Cover style: "light" (default, a calm pale cover) or "gradient" (an accent wash).
 #let cover-style = "$if(cover_style)$$cover_style$$else$light$endif$"
-// Gradient cover (opt-in): a 45° diagonal wash derived entirely from `accent` —
-// a deep shade at the top-left flowing to the accent at the bottom-right — with
-// two soft accent glows layered over it. Single-accent, so it re-tints with the
-// rest of the theme.
+// Gradient cover (opt-in): a 45° diagonal wash echoing proof — a dark, neutral
+// slate anchor at the top-left flowing through a deep accent to the accent itself
+// at the bottom-right, with two soft accent glows over it. The slate anchor is a
+// fixed neutral (it keeps the cover dark so the lifted-accent highlights read
+// against it); the accent drives the rest, so the wash still re-tints with the
+// theme.
+#let cover-slate = rgb("#0F172A")   // slate-900 — the dark gradient anchor (proof's cover-top)
 #let cover-grad = gradient.linear(angle: 45deg,
-  (accent.darken(62%), 0%), (accent.darken(20%), 58%), (accent, 100%))
-#let cover-glow = accent.lighten(20%)
+  (cover-slate, 0%), (accent.darken(22%), 60%), (accent, 100%))
+#let cover-glow = accent.lighten(30%)
 #let cover-glows = {
   place(top + left, rect(width: 100%, height: 100%, fill: gradient.radial(
     (cover-glow.transparentize(68%), 0%), (cover-glow.transparentize(100%), 70%),
@@ -87,9 +91,10 @@ $endif$
   set list(spacing: 0.8em)
   set enum(spacing: 0.8em)
 
-  // Headings: graphite sans. H1 is the largest with extra air above and below;
-  // deeper levels step down in size. Plain (no rules), matching proof.
-  show heading: set text(fill: heading-ink, font: head-font, weight: 700)
+  // Headings: accent sans, matching proof (proof colors every heading in its
+  // brand; imprint uses the configurable accent). H1 is the largest with extra
+  // air above and below; deeper levels step down in size. Plain — no rules.
+  show heading: set text(fill: accent, font: head-font, weight: 700)
   show heading: set block(above: 1.4em, below: 0.95em, sticky: true)
   show heading.where(level: 2): set text(size: 13.5pt)
   show heading.where(level: 3): set text(size: 11.5pt)
@@ -205,8 +210,8 @@ $endif$
           if confidential [Proprietary — Do not distribute] else [],
           align(right)[#if date != none { date }])
       },
-      coverBody(white, white, white.transparentize(22%), white.transparentize(10%),
-        white.transparentize(34%), white.transparentize(12%), white,
+      coverBody(white, accent-bright, white.transparentize(20%), accent-bright,
+        white.transparentize(28%), accent-bright, white,
         if logo-white-path != none { image(logo-white-path, height: logo-height, alt: "logo") } else []),
     )
   } else if cover {

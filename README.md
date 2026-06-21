@@ -39,10 +39,11 @@ header/cover logo, and a confidential footer. Same Markdown, different switches.
 | <img src="docs/images/sample-full-1.png" width="250" alt="Cover with logo, recipient, category, confidential"> | <img src="docs/images/sample-full-2.png" width="250" alt="Body page with header logo"> | <img src="docs/images/sample-full-3.png" width="250" alt="Diagram page, confidential footer"> |
 
 The cover comes in two styles. The **light** cover (above) is the default; pass
-`--gradient` (or `cover_style: gradient`) for a diagonal accent wash — derived
-entirely from your theme color, so it re-tints with the rest of the document. A
-dark logo would vanish on the wash, so the gradient cover uses an optional light
-`logo_white` (and otherwise shows no cover logo).
+`--gradient` (or `cover_style: gradient`) for a diagonal wash — a dark slate
+anchor flowing into your theme color, with the subtitle and labels lifted into a
+brighter accent. Change `accent` and the wash re-tints with the rest of the
+document. A dark logo would vanish on it, so the gradient cover uses an optional
+light `logo_white` (and otherwise shows no cover logo).
 
 | Light cover (default) | Gradient cover (`--gradient`) |
 |:---------------------:|:-----------------------------:|
@@ -59,11 +60,12 @@ Regenerate these with `make preview` after a theme change.
 - **Optional title page** — pass `--cover` (or `cover: true`) for a calm, light
   cover: title, subtitle, description, a `Prepared for / Prepared by` band, and
   an optional category eyebrow. Prefer something bolder? `--gradient` (or
-  `cover_style: gradient`) swaps it for a diagonal accent wash derived from your
-  theme color.
-- **Graphite + blue theme** — graphite text, a single configurable accent (a
-  professional technical blue by default) on links, rules, H1 underlines, table
-  headers, and callouts. Change one value in config to re-tint the whole document.
+  `cover_style: gradient`) swaps it for a dark accent wash with lifted-accent
+  highlights.
+- **Graphite + blue theme** — graphite body text, a single configurable accent (a
+  professional technical blue by default) on headings, links, section dividers,
+  table headers, and callouts. Change one value in config to re-tint the whole
+  document.
 - **Mermaid** ` ```mermaid ` blocks auto-rendered to crisp vector **SVG**,
   centered in a framed figure with an optional caption.
 - **Callouts** — any Markdown block quote becomes a tinted note box.

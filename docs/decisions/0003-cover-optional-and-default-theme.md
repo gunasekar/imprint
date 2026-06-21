@@ -38,3 +38,9 @@ technical blue (`#2563EB`) before the tool saw real use: teal reads as the same
 green family as the parent tool, and a blue is the more conventional, neutral
 choice for technical documentation. The accent remains a single config token, so
 this was a one-value change.
+
+Headings were also originally graphite (`#111827`); they were moved to the accent
+to follow proof, which colors every heading in its brand. This keeps imprint's
+look consistent with the parent tool and lets the one accent token drive headings
+along with links, dividers, table heads, and callouts. Body text stays graphite;
+table-head text and the light-cover title keep `heading-ink`.

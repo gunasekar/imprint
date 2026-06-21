@@ -74,16 +74,17 @@ dir is a `mktemp -d` cleaned up on exit.
 Typst template — `$if(...)$ / $for(...)$` placeholders are filled by pandoc, then
 the rest is plain Typst. Structure:
 
-- **Theme tokens** at the top. The accent is one configurable color; `accent-dark`
-  and `accent-soft` are *derived* from it via `.darken()` / `.lighten()`, so
-  changing `accent` re-tints links, rules, H1 underlines, table headers, and
-  callouts together. Grays (graphite ink, muted, hairline, surface) are fixed.
+- **Theme tokens** at the top. The accent is one configurable color; `accent-dark`,
+  `accent-soft`, and `accent-bright` are *derived* from it via `.darken()` /
+  `.lighten()`, so changing `accent` re-tints headings, links, section dividers,
+  table headers, callouts, and the gradient cover together. Grays (graphite ink,
+  muted, hairline, surface) are fixed.
 - **`conf(...)`** — a function holding every `show`/`set` rule (headings, code,
   callouts, tables, figures), the optional cover page, and the running
   header/footer. The body is passed in as `doc`. The cover has two styles sharing
   one `coverBody` closure: the default light page and an opt-in gradient wash
-  (`cover_style: gradient`) derived from `accent` — see
-  [ADR 0004](decisions/0004-optional-gradient-cover.md).
+  (`cover_style: gradient`) — a dark slate anchor flowing into `accent`, echoing
+  proof — see [ADR 0004](decisions/0004-optional-gradient-cover.md).
 - **`#show: doc => conf(...)`** wires the pandoc-filled metadata into `conf` and
   renders `$body$`.
 
@@ -91,11 +92,12 @@ the rest is plain Typst. Structure:
 
 | Token | Value | Role |
 |--------|--------|------|
-| `accent` | `#2563EB` (config) | links, H1 rule, table header tint, callout bar |
+| `accent` | `#2563EB` (config) | headings, links, section divider, table header tint, callout bar |
 | `accent-dark` | `accent.darken(22%)` | links, eyebrow labels, bold lead-ins |
 | `accent-soft` | `accent.lighten(90%)` | callout / table-head fill |
-| `cover-grad` | `accent.darken(62%)` → `accent` | gradient cover wash (opt-in); cover text is white for contrast |
-| `heading-ink` | `#111827` | headings |
+| `accent-bright` | `accent.lighten(28%)` | lifted-accent highlights (subtitle, labels) on the gradient cover |
+| `cover-grad` | `#0F172A` (slate) → `accent` | gradient cover wash (opt-in); slate anchor keeps it dark so accent highlights read |
+| `heading-ink` | `#111827` | table-head text, light-cover title |
 | `ink` | `#1F2937` | body text |
 | `muted` | `#6B7280` | captions, footer, labels |
 | `hairline` | `#E5E7EB` | rules, borders, frames |

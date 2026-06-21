@@ -22,10 +22,22 @@ carries a light/dark logo pair. imprint has no brand: it has one configurable
    whether a title page renders; a new `cover_style` (`light` | `gradient`,
    default `light`) decides its look. The layout is shared — a single `coverBody`
    closure in the template — so the two styles differ only in fills and logo.
-2. **The gradient is derived entirely from `accent`.** A 45° linear wash from
-   `accent.darken(62%)` → `accent.darken(20%)` → `accent`, with two soft radial
-   glows from `accent.lighten(20%)`. No new color tokens to configure: re-tinting
-   `accent` re-tints the gradient too, keeping the single-accent promise.
+2. **The gradient mirrors proof's, tinted by `accent`.** A 45° linear wash from a
+   dark slate anchor (`#0F172A`, proof's `cover-top`) at 0% → `accent.darken(22%)`
+   at 60% → `accent` at 100%, with two soft radial glows from `accent.lighten(30%)`.
+   The slate anchor is the one fixed color: it keeps the cover dark enough that a
+   *lifted* accent (`accent.lighten(28%)`) reads as a highlight on the subtitle,
+   eyebrow, and "Prepared" labels — exactly how proof uses its brand-light green.
+   Title and recipient/author values stay white. Everything but the slate anchor
+   derives from `accent`, so re-tinting the theme re-tints the wash and its
+   highlights together.
+
+   An earlier attempt derived the gradient *entirely* from `accent`
+   (`accent.darken(62%)` → `accent`). On a single-accent (blue) wash that made the
+   background the same hue as any accent-colored highlight, so the subtitle and
+   logo washed out and had to fall back to plain white. proof avoids this with a
+   dark, hue-neutral slate base; adopting the slate anchor is what lets imprint
+   use a colored highlight the way proof does.
 3. **A separate `logo_white` for the dark cover.** The normal (dark) `logo` would
    vanish on the wash. The gradient cover uses `logo_white` when set and otherwise
    shows no cover logo; body-page running headers always use the normal `logo`.
