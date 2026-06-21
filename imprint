@@ -9,6 +9,7 @@
 #          [--logo PATH | --no-logo] [--logo-dark-bg PATH] [--logo-height PT]
 #          [--cover | --no-cover] [--cover-style light|gradient] [--gradient]
 #          [--confidential | --no-confidential] [--keep-h1]
+#          [--profile NAME | --list-profiles]
 #
 # DOCUMENT metadata (title, author, footer text, recipient, date, ...) comes from
 # the document's front matter or the CLI flags above — never from config. HOUSE
@@ -16,10 +17,17 @@
 # toggles) comes from a config file and is reused across documents, with a
 # per-document override; see config.example.yaml.
 #
+# For multiple house styles (e.g. one per org), keep a named config ("profile") at
+# ~/.config/imprint/profiles/<name>.yaml and select it with --profile <name> (or
+# set a default with IMPRINT_PROFILE); --list-profiles prints what you have. A
+# profile's logo path resolves next to the profile, so each profile's assets live
+# together.
+#
 # Precedence: CLI flag > front matter (document) > config (rendering) > default.
 # The cover page is OFF by default. Output defaults to <input>.pdf; the title
 # defaults to the first H1 (stripped from the body unless --keep-h1). Config is
-# looked up at $IMPRINT_CONFIG, then ~/.config/imprint/config.yaml, then ./config.yaml.
+# looked up at: --profile, $IMPRINT_CONFIG, IMPRINT_PROFILE profile,
+# ~/.config/imprint/config.yaml, then ./config.yaml.
 
 set -euo pipefail
 
@@ -34,21 +42,22 @@ HERE="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 ASSETS="$HERE/assets"
 TEMPLATES="$HERE/templates"
 
-# Locate config: explicit override, then XDG-ish user config, then repo-local.
+# User config home. Named house styles ("profiles" — e.g. one per org) live under
+# profiles/ here, selected with --profile / IMPRINT_PROFILE. Config is resolved
+# after arg parsing (below), since --profile names a profile file.
+CONFIG_HOME="$HOME/.config/imprint"
+PROFILES_DIR="$CONFIG_HOME/profiles"
 CONFIG=""
-for c in "${IMPRINT_CONFIG:-}" "$HOME/.config/imprint/config.yaml" "$HERE/config.yaml"; do
-  [[ -n "$c" && -f "$c" ]] && { CONFIG="$c"; break; }
-done
 
 # Output is per-run (CLI only). Everything else can come from front matter or
 # config; CLI flags, when given, override both. Empty = "not set on CLI".
 IN=""; OUT=""
 TITLE=""; SUBTITLE=""; DESC=""; AUTHOR=""; FOOTER_TEXT_CLI=""
 RECIPIENT=""; DATE=""; CONF=""; KEEP_H1=0; COVER=""; CATEGORY=""; ACCENT=""; LOGO_CLI=""; LOGO_HEIGHT_CLI=""
-COVER_STYLE=""; LOGO_DARK_BG_CLI=""; NO_LOGO=0
+COVER_STYLE=""; LOGO_DARK_BG_CLI=""; NO_LOGO=0; PROFILE_CLI=""; LIST_PROFILES=0
 
 usage() {
-  sed -n '2,16p' "$SOURCE" | sed 's/^# \{0,1\}//'
+  sed -n '2,24p' "$SOURCE" | sed 's/^# \{0,1\}//'
 }
 
 while [[ $# -gt 0 ]]; do
@@ -68,6 +77,8 @@ while [[ $# -gt 0 ]]; do
     --logo-dark-bg) LOGO_DARK_BG_CLI="$2"; shift 2;;
     --no-logo) NO_LOGO=1; shift;;
     --logo-height) LOGO_HEIGHT_CLI="$2"; shift 2;;
+    --profile) PROFILE_CLI="$2"; shift 2;;
+    --list-profiles) LIST_PROFILES=1; shift;;
     --cover) COVER=1; shift;;
     --no-cover) COVER=0; shift;;
     --cover-style) COVER_STYLE="$2"; shift 2;;
@@ -79,6 +90,38 @@ while [[ $# -gt 0 ]]; do
     -*) echo "unknown flag: $1" >&2; exit 2;;
     *) IN="$1"; shift;;
   esac
+done
+
+# --list-profiles: print the available profiles and exit (no input needed).
+if [[ "$LIST_PROFILES" == "1" ]]; then
+  shopt -s nullglob
+  found=0
+  for p in "$PROFILES_DIR"/*.yaml; do
+    [[ $found == 0 ]] && echo "profiles in $PROFILES_DIR:"
+    found=1
+    echo "  $(basename "$p" .yaml)"
+  done
+  [[ $found == 0 ]] && echo "no profiles yet — create $PROFILES_DIR/<name>.yaml (see config.example.yaml)"
+  exit 0
+fi
+
+# Resolve a profile (a named config under profiles/, e.g. one per org). An explicit
+# --profile wins; otherwise IMPRINT_PROFILE sets a default for the shell. A
+# named-but-missing profile is an error — fail loudly rather than render with the
+# wrong branding.
+PROFILE_CONFIG_CLI=""; PROFILE_CONFIG_ENV=""
+if [[ -n "$PROFILE_CLI" ]]; then
+  PROFILE_CONFIG_CLI="$PROFILES_DIR/$PROFILE_CLI.yaml"
+  [[ -f "$PROFILE_CONFIG_CLI" ]] || { echo "imprint: no profile for --profile '$PROFILE_CLI' (expected $PROFILE_CONFIG_CLI)" >&2; exit 2; }
+elif [[ -n "${IMPRINT_PROFILE:-}" ]]; then
+  PROFILE_CONFIG_ENV="$PROFILES_DIR/$IMPRINT_PROFILE.yaml"
+  [[ -f "$PROFILE_CONFIG_ENV" ]] || { echo "imprint: no profile for IMPRINT_PROFILE '$IMPRINT_PROFILE' (expected $PROFILE_CONFIG_ENV)" >&2; exit 2; }
+fi
+
+# Config lookup (first found wins): --profile, then an explicit $IMPRINT_CONFIG,
+# then an IMPRINT_PROFILE profile, then the user default, then repo-local.
+for c in "$PROFILE_CONFIG_CLI" "${IMPRINT_CONFIG:-}" "$PROFILE_CONFIG_ENV" "$CONFIG_HOME/config.yaml" "$HERE/config.yaml"; do
+  [[ -n "$c" && -f "$c" ]] && { CONFIG="$c"; break; }
 done
 
 [[ -n "$IN" && -f "$IN" ]] || { echo "input markdown not found: $IN" >&2; exit 2; }

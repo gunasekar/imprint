@@ -180,6 +180,38 @@ footer text, recipient, … — does **not** go here; it lives in each document'
 front matter (next section), which is also where you override or drop the logo
 for one document (`logo: none`).
 
+### Multiple house styles (profiles)
+
+Render for several orgs (or brands, or clients) by keeping one config per house
+style — a **profile** — under `~/.config/imprint/profiles/`, and selecting it with
+`--profile`:
+
+```
+~/.config/imprint/
+  config.yaml                 # your personal default (no profile)
+  profiles/
+    acme.yaml                 # accent, fonts, logo for Acme
+    acme.svg
+    acme-dark.svg             # logo_dark_bg for Acme's gradient cover
+    globex.yaml
+    globex.svg
+```
+
+```bash
+imprint report.md --profile acme      # Acme's accent + Acme logo
+imprint report.md --profile globex    # Globex's accent + Globex logo
+make profile NAME=acme                # scaffold profiles/acme.yaml from the example
+imprint --list-profiles               # show the profiles you have
+```
+
+A profile is just a config file, so it holds the same keys (`accent`, `font_*`,
+`logo`, `logo_dark_bg`, default toggles) — and because a config `logo` resolves
+next to its file, each profile keeps its assets together. Set a default profile
+for a shell with `export IMPRINT_PROFILE=acme`; a document's front matter and CLI
+flags still override the profile per render. Resolution order: `--profile` →
+`$IMPRINT_CONFIG` → `IMPRINT_PROFILE` → `~/.config/imprint/config.yaml` →
+`./config.yaml`.
+
 ## Metadata: front matter or flags
 
 Per-document metadata lives in **front matter** at the very top of the `.md`.

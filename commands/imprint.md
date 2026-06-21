@@ -85,4 +85,5 @@ Then give the command to render it (imprint is on the PATH, so it runs from anyw
 imprint <path/to/source.md>             # -> <source without .md>.pdf
 imprint <path/to/source.md> --cover     # add a light title page
 imprint <path/to/source.md> --gradient  # add a gradient (accent-wash) title page
+imprint <path/to/source.md> --profile acme   # render with a specific org's house style
 ```

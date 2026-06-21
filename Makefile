@@ -4,7 +4,7 @@ BINDIR := $(PREFIX)/bin
 # Where Claude Code looks for user slash commands (override with CMDDIR=...).
 CMDDIR ?= $(HOME)/.claude/commands
 
-.PHONY: install uninstall command uninstall-command check example config preview
+.PHONY: install uninstall command uninstall-command check example config profile preview
 
 ## Symlink imprint onto your PATH (override with PREFIX=~/.local)
 install:
@@ -26,6 +26,19 @@ config:
 	else \
 	  cp "$(CURDIR)/config.example.yaml" "$(HOME)/.config/imprint/config.yaml"; \
 	  echo "created $(HOME)/.config/imprint/config.yaml — edit it with your name and accent"; \
+	fi
+
+## Scaffold a per-org/house-style profile: make profile NAME=acme
+## -> ~/.config/imprint/profiles/acme.yaml (select it with `imprint --profile acme`)
+profile:
+	@if [ -z "$(NAME)" ]; then echo "usage: make profile NAME=<name>   (e.g. NAME=acme)"; exit 2; fi
+	@mkdir -p "$(HOME)/.config/imprint/profiles"
+	@if [ -f "$(HOME)/.config/imprint/profiles/$(NAME).yaml" ]; then \
+	  echo "exists: $(HOME)/.config/imprint/profiles/$(NAME).yaml (left untouched)"; \
+	else \
+	  cp "$(CURDIR)/config.example.yaml" "$(HOME)/.config/imprint/profiles/$(NAME).yaml"; \
+	  echo "created $(HOME)/.config/imprint/profiles/$(NAME).yaml — set its accent, fonts, and logo"; \
+	  echo "put $(NAME)'s logo beside it, then: imprint doc.md --profile $(NAME)"; \
 	fi
 
 ## Install the /imprint Claude Code slash command (symlink; override with CMDDIR=...)

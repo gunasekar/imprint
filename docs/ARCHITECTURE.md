@@ -28,16 +28,22 @@ A single `python3` heredoc inside `imprint` does all source-level work on a
 throwaway build copy — the original `.md` is never touched:
 
 - **Config + front matter merge.** Reads the config file (flat `key: value`) for
-  **rendering settings only** — the keys in `PDF_CONFIG_KEYS` (accent, fonts,
-  cover/confidential defaults). The document's front matter layers on top and is
-  the sole source of document metadata (title, author, footer text, logo, …).
-  Both are parsed by the same tiny flat-key parser — no PyYAML.
+  **house-style settings** — the keys in `PDF_CONFIG_KEYS` (accent, fonts, the
+  logo, and cover/confidential defaults). The document's front matter layers on
+  top and is the sole source of document metadata (title, author, footer text, …).
+  Both are parsed by the same tiny flat-key parser — no PyYAML. The config file is
+  chosen by the bash wrapper before this step, which supports per-house-style
+  **profiles** (`--profile NAME` / `IMPRINT_PROFILE` → `profiles/NAME.yaml`); see
+  [ADR 0006](decisions/0006-org-profiles.md). Logo paths resolve by origin here —
+  relative to the `.md` for front matter, relative to the config/profile file for
+  config (see [ADR 0005](decisions/0005-logo-as-house-style.md)).
 - **Title resolution.** `title` from front matter wins over the first `# H1`;
   the H1 is stripped from the body (unless `--keep-h1`) so it doesn't duplicate
   the header/cover.
 - **Local images.** Copied into the build dir and their links rewritten, so Typst
-  can resolve them under `--root`. Remote URLs are left alone. (The document logo
-  is resolved and copied by the bash wrapper, where CLI overrides are applied.)
+  can resolve them under `--root`. Remote URLs are left alone. (Logo paths are
+  resolved to absolute here by origin; the bash wrapper then applies any CLI
+  override and copies the asset in.)
 - **Mermaid → SVG.** Each ` ```mermaid ` block is rendered by `mmdc` to a vector
   SVG and replaced with a Typst `#figure`. A `%% caption:` line becomes the
   caption. `htmlLabels:false` makes Mermaid emit native `<text>` the Typst SVG

@@ -10,6 +10,11 @@
 #   ~/.config/imprint/config.yaml   # recommended for an installed imprint
 #   ./config.yaml                 # repo-local (gitignored), handy for dev
 #
+# Multiple orgs/brands? Copy this to ~/.config/imprint/profiles/<name>.yaml (or run
+# `make profile NAME=<name>`) and select it per render with `imprint --profile <name>`
+# (or default a shell with IMPRINT_PROFILE=<name>). A profile's logo path resolves
+# next to the profile file, so keep each profile's assets beside it.
+#
 # Every value is a DEFAULT. A document's front matter or a CLI flag overrides it.
 # All keys are optional; imprint renders fine with no config at all.
 
