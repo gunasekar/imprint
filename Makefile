@@ -4,7 +4,7 @@ BINDIR := $(PREFIX)/bin
 # Where Claude Code looks for user slash commands (override with CMDDIR=...).
 CMDDIR ?= $(HOME)/.claude/commands
 
-.PHONY: install uninstall command uninstall-command check example config
+.PHONY: install uninstall command uninstall-command check example config preview
 
 ## Symlink imprint onto your PATH (override with PREFIX=~/.local)
 install:
@@ -49,3 +49,19 @@ check:
 example:
 	./imprint examples/sample.md -o examples/sample.pdf
 	@echo "wrote examples/sample.pdf"
+
+## Regenerate the README snapshot grid (docs/images/) from examples/sample.md.
+## Needs pdftoppm (poppler) and magick (ImageMagick) in addition to imprint.
+preview:
+	@mkdir -p docs/images .tmp/preview
+	./imprint examples/sample.md -o .tmp/preview/minimal.pdf
+	./imprint examples/sample.md --recipient "Acme Corp" --category "Documentation" \
+	  --confidential --logo logo.svg -o .tmp/preview/full.pdf
+	@for v in minimal full; do \
+	  pdftoppm -png -r 150 ".tmp/preview/$$v.pdf" ".tmp/preview/$$v"; \
+	  for p in 1 2 3; do \
+	    magick ".tmp/preview/$$v-$$p.png" -resize 900x \
+	      -bordercolor '#D8DBE0' -border 1 "docs/images/sample-$$v-$$p.png"; \
+	  done; \
+	done
+	@echo "wrote docs/images/sample-{minimal,full}-{1,2,3}.png"

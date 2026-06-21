@@ -24,6 +24,22 @@ imprint report.md --cover              # add a title page (off by default)
 imprint report.md --accent "#2563EB"   # re-theme for one run
 ```
 
+## What it looks like
+
+Both rows below are the **same** [`examples/sample.md`](examples/sample.md)
+rendered by imprint — left to right: the cover, a body page, and the diagram
+page. The **top row** uses only the common front matter. The **bottom row** turns
+on the optional cover fields — `recipient`, `category`, `confidential`, and
+`logo` — which add the "Prepared for" line, the eyebrow + confidential marker, a
+header/cover logo, and a confidential footer. Same Markdown, different switches.
+
+| Cover | Body | Diagram |
+|:-----:|:----:|:-------:|
+| <img src="docs/images/sample-minimal-1.png" width="250" alt="Minimal cover"> | <img src="docs/images/sample-minimal-2.png" width="250" alt="Body page"> | <img src="docs/images/sample-minimal-3.png" width="250" alt="Diagram page"> |
+| <img src="docs/images/sample-full-1.png" width="250" alt="Cover with logo, recipient, category, confidential"> | <img src="docs/images/sample-full-2.png" width="250" alt="Body page with header logo"> | <img src="docs/images/sample-full-3.png" width="250" alt="Diagram page, confidential footer"> |
+
+Regenerate these with `make preview` after a theme change.
+
 ## What you get
 
 - **Clean body pages by default** — a Titled running header (an optional logo on
