@@ -19,16 +19,17 @@ cover:        true                 # title page; OFF by default — omit to star
 # recipient:    "Acme Corp"        # adds a "Prepared for" line on the cover
 # category:     "Documentation"    # cover eyebrow + PDF keyword
 # confidential: true               # stamps a "Confidential" marker on every page
-# logo:         "logo.svg"         # cover + running-header mark (path relative to this .md)
-# logo_white:   "logo-white.svg"   # light logo for the gradient cover (the dark logo would vanish there)
-# logo_height:  40                 # cover logo height, in pt
 # cover_style:  gradient           # swap the calm light cover for an accent wash (implies cover: true)
 
 # --- House style: normally set once in config.yaml; override here only for a one-off look ---
-# accent:       "#2563EB"          # the single theme color (links, rules, table headers)
+# accent:       "#2563EB"          # the single theme color (headings, links, rules, table headers)
 # font_body:    "Source Sans 3"    # body + headings
 # font_head:    "IBM Plex Sans"    # headings only (defaults to font_body)
 # font_mono:    "JetBrains Mono"   # code
+# logo:         "logo.svg"             # brand mark (cover + running header). Set once in config; here it's
+#                                      # relative to this .md. Use `logo: none` to drop a config logo for this doc.
+# logo_dark_bg: "logo-dark-bg.svg"     # logo for a dark background; used only on the gradient cover
+# logo_height:  40                     # cover logo height, in pt
 -->
 # imprint — A Field Guide
 

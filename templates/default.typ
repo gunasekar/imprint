@@ -24,10 +24,10 @@
 #let head-font = "$if(font_head)$$font_head$$else$Source Sans 3$endif$"
 #let mono-font = "$if(font_mono)$$font_mono$$else$JetBrains Mono$endif$"
 #let logo-path = $if(logo)$"$logo$"$else$none$endif$
-// A light logo for the dark gradient cover (logo_white / --logo-white). The dark
+// A light logo for the dark gradient cover (logo_dark_bg / --logo-dark-bg). The dark
 // `logo` would vanish on the wash, so the gradient cover uses this when set and
 // otherwise shows no cover logo. Body-page headers always use the normal `logo`.
-#let logo-white-path = $if(logo_white)$"$logo_white$"$else$none$endif$
+#let logo-dark-bg-path = $if(logo_dark_bg)$"$logo_dark_bg$"$else$none$endif$
 // Running header/footer text size. The header logo derives from this — it is set
 // to twice the title text so the logo and title read as a balanced pair on one line.
 #let head-size = 8.5pt
@@ -212,7 +212,7 @@ $endif$
       },
       coverBody(white, accent-bright, white.transparentize(20%), accent-bright,
         white.transparentize(28%), accent-bright, white,
-        if logo-white-path != none { image(logo-white-path, height: logo-height, alt: "logo") } else []),
+        if logo-dark-bg-path != none { image(logo-dark-bg-path, height: logo-height, alt: "logo") } else []),
     )
   } else if cover {
     page(numbering: none, header: none,

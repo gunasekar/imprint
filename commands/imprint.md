@@ -50,9 +50,9 @@ apply — imprint omits unset optionals):
 - `confidential` — `true` for sensitive documents; `false` otherwise.
 
 `cover` and `confidential` change the document's framing, so **confirm those two
-with the user** before finalizing; infer the rest. Personal identity (author,
-footer text, accent) comes from the user's config — do **not** add it to front
-matter.
+with the user** before finalizing; infer the rest. House style (the accent, fonts,
+and logo) comes from the user's config — do **not** add it to front matter unless
+this one document needs to differ.
 
 ## Step 3: Apply authoring conventions
 

@@ -20,12 +20,13 @@ second changes with every file.
 Split them by where they live:
 
 - **Rendering config** lives in a `config.yaml`, resolved at `$IMPRINT_CONFIG` →
-  `~/.config/imprint/config.yaml` → `./config.yaml`. It holds *only* render-level
-  keys (`PDF_CONFIG_KEYS`): the theme `accent`, the `font_*` families, and the
-  default `cover` / `confidential` toggles. It is a reusable house style.
-- **Document metadata** (title, author, footer text, logo, recipient, date,
-  category) lives in each document's **front matter**, or a CLI flag. It is never
-  read from config.
+  `~/.config/imprint/config.yaml` → `./config.yaml`. It holds *only* house-style
+  keys (`PDF_CONFIG_KEYS`): the theme `accent`, the `font_*` families, the `logo`
+  (see [ADR 0005](0005-logo-as-house-style.md)), and the default `cover` /
+  `cover_style` / `confidential` toggles. It is a reusable house style.
+- **Document metadata** (title, author, footer text, recipient, date, category)
+  lives in each document's **front matter**, or a CLI flag. It is never read from
+  config.
 
 Precedence for any value: **CLI flag > document front matter > config (render
 keys only) > built-in default**. Unset optionals are omitted, never invented.

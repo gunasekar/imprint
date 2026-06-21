@@ -58,7 +58,7 @@ preview:
 	./imprint examples/sample.md --recipient "Acme Corp" --category "Documentation" \
 	  --confidential --logo logo.svg -o .tmp/preview/full.pdf
 	./imprint examples/sample.md --recipient "Acme Corp" --category "Documentation" \
-	  --confidential --gradient --logo-white logo-white.svg -o .tmp/preview/gradient.pdf
+	  --confidential --gradient --logo-dark-bg logo-dark-bg.svg -o .tmp/preview/gradient.pdf
 	./imprint examples/sample.md --no-cover -o .tmp/preview/nocover.pdf
 	@for v in minimal full; do \
 	  pdftoppm -png -r 150 ".tmp/preview/$$v.pdf" ".tmp/preview/$$v"; \

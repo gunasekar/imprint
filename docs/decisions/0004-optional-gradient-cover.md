@@ -38,8 +38,9 @@ carries a light/dark logo pair. imprint has no brand: it has one configurable
    logo washed out and had to fall back to plain white. proof avoids this with a
    dark, hue-neutral slate base; adopting the slate anchor is what lets imprint
    use a colored highlight the way proof does.
-3. **A separate `logo_white` for the dark cover.** The normal (dark) `logo` would
-   vanish on the wash. The gradient cover uses `logo_white` when set and otherwise
+3. **A separate `logo_dark_bg` for the dark cover.** The normal (dark) `logo`
+   would vanish on the wash. The gradient cover uses `logo_dark_bg` (a logo for a
+   dark background — named after proof's `lockup-dark-bg`) when set and otherwise
    shows no cover logo; body-page running headers always use the normal `logo`.
 4. **Selecting gradient implies the cover is on.** A gradient is meaningless
    without a cover, so the `--gradient` shorthand turns the cover on, and a
@@ -56,7 +57,7 @@ carries a light/dark logo pair. imprint has no brand: it has one configurable
   identical after the `coverBody` refactor.
 - One config token (`accent`) drives both the theme and the gradient, so there is
   nothing extra to keep in sync when re-skinning.
-- `logo_white` adds a little surface, but it is the honest fix for contrast on a
+- `logo_dark_bg` adds a little surface, but it is the honest fix for contrast on a
   dark cover; without it the gradient cover simply omits the logo rather than
   rendering an invisible one.
 - The cover-on implication is intentionally asymmetric (per-document settings

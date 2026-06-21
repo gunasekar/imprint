@@ -6,14 +6,15 @@
 #   imprint INPUT.md [-o OUT.pdf]
 #          [--title T] [--subtitle S] [--desc D] [--author A] [--footer-text TEXT]
 #          [--recipient R] [--date D] [--category C] [--accent #HEX]
-#          [--logo PATH] [--logo-white PATH] [--logo-height PT]
+#          [--logo PATH | --no-logo] [--logo-dark-bg PATH] [--logo-height PT]
 #          [--cover | --no-cover] [--cover-style light|gradient] [--gradient]
 #          [--confidential | --no-confidential] [--keep-h1]
 #
-# DOCUMENT metadata (title, author, footer text, logo, recipient, date, ...)
-# comes from the document's front matter or the CLI flags above — never from
-# config. RENDERING settings (the theme accent, fonts, and the default cover /
-# confidential toggles) come from a config file; see config.example.yaml.
+# DOCUMENT metadata (title, author, footer text, recipient, date, ...) comes from
+# the document's front matter or the CLI flags above — never from config. HOUSE
+# STYLE (the theme accent, fonts, the logo, and the default cover / confidential
+# toggles) comes from a config file and is reused across documents, with a
+# per-document override; see config.example.yaml.
 #
 # Precedence: CLI flag > front matter (document) > config (rendering) > default.
 # The cover page is OFF by default. Output defaults to <input>.pdf; the title
@@ -44,7 +45,7 @@ done
 IN=""; OUT=""
 TITLE=""; SUBTITLE=""; DESC=""; AUTHOR=""; FOOTER_TEXT_CLI=""
 RECIPIENT=""; DATE=""; CONF=""; KEEP_H1=0; COVER=""; CATEGORY=""; ACCENT=""; LOGO_CLI=""; LOGO_HEIGHT_CLI=""
-COVER_STYLE=""; LOGO_WHITE_CLI=""
+COVER_STYLE=""; LOGO_DARK_BG_CLI=""; NO_LOGO=0
 
 usage() {
   sed -n '2,16p' "$SOURCE" | sed 's/^# \{0,1\}//'
@@ -64,7 +65,8 @@ while [[ $# -gt 0 ]]; do
     --category) CATEGORY="$2"; shift 2;;
     --accent) ACCENT="$2"; shift 2;;
     --logo) LOGO_CLI="$2"; shift 2;;
-    --logo-white) LOGO_WHITE_CLI="$2"; shift 2;;
+    --logo-dark-bg) LOGO_DARK_BG_CLI="$2"; shift 2;;
+    --no-logo) NO_LOGO=1; shift;;
     --logo-height) LOGO_HEIGHT_CLI="$2"; shift 2;;
     --cover) COVER=1; shift;;
     --no-cover) COVER=0; shift;;
@@ -149,10 +151,12 @@ if m:
     if not keep_h1:
         text = text[:m.start()] + text[m.end():]
 
-# Merge: config contributes ONLY rendering settings; front matter (document
-# metadata + any per-doc render overrides) layers on top. Document fields —
-# title, author, footer_text, logo, recipient, ... — never come from config.
-PDF_CONFIG_KEYS = ("accent", "font_body", "font_head", "font_mono", "cover", "cover_style", "confidential")
+# Merge: config contributes rendering settings + house-style defaults (theme,
+# fonts, toggles, and the logo — all reusable across documents); front matter
+# (document metadata + any per-doc overrides) layers on top. Document-specific
+# fields — title, author, footer_text, recipient, ... — never come from config.
+PDF_CONFIG_KEYS = ("accent", "font_body", "font_head", "font_mono", "cover",
+                   "cover_style", "confidential", "logo", "logo_dark_bg", "logo_height")
 merged = {k: cfg[k] for k in PDF_CONFIG_KEYS if cfg.get(k) not in (None, "")}
 merged.update(fm)
 if not merged.get("title") and h1:
@@ -163,21 +167,44 @@ if not merged.get("title") and h1:
 if fm.get("cover_style") == "gradient" and "cover" not in fm:
     merged["cover"] = "true"
 
-# The logo is a document asset (front matter / CLI), resolved and copied in the
-# bash side; here we just pass its raw value through to meta.kv.
+# Logo assets are house style with a per-document override, so they resolve by
+# origin: a front-matter `logo` is relative to the .md; a config `logo` is
+# relative to the config file (the logo lives centrally, not beside each doc).
+# Resolve to an absolute path here, where the origin is known; `none`/empty
+# suppresses (a document can drop a config logo with `logo: none`). The CLI
+# `--logo` (cwd-relative) is layered on later, in the bash side.
+srcdir = pathlib.Path(src).resolve().parent
+cfgdir = pathlib.Path(cfgpath).resolve().parent if cfgpath else srcdir
+def resolve_asset(key):
+    if key in fm:
+        val, base = fm.get(key), srcdir
+    elif key in cfg:
+        val, base = cfg.get(key), cfgdir
+    else:
+        return None
+    val = (val or "").strip()
+    if not val or val.lower() == "none":
+        return None
+    p = pathlib.Path(val)
+    return str(p if p.is_absolute() else base / p)
+for key in ("logo", "logo_dark_bg"):
+    resolved = resolve_asset(key)
+    if resolved:
+        merged[key] = resolved
+    else:
+        merged.pop(key, None)
 
 # Emit recognized keys to meta.kv (bash applies CLI overrides + defaults on top).
 KEYS = ("title", "subtitle", "description", "author", "date", "recipient",
         "category", "cover", "cover_style", "confidential", "accent", "logo",
-        "logo_white", "font_body", "font_head", "font_mono", "footer_text",
+        "logo_dark_bg", "font_body", "font_head", "font_mono", "footer_text",
         "logo_height")
 meta = {k: merged[k] for k in KEYS if merged.get(k) not in (None, "")}
 (build / "meta.kv").write_text("".join(f"{k}={v}\n" for k, v in meta.items()))
 
 # Local images: copy each referenced file into the build dir (resolving relative
-# to the source .md) and rewrite the link, so Typst finds it under --root.
-# Remote URLs are left untouched. Non-empty alt text -> framed figure.
-srcdir = pathlib.Path(src).resolve().parent
+# to the source .md, `srcdir` from above) and rewrite the link, so Typst finds it
+# under --root. Remote URLs are left untouched. Non-empty alt text -> framed figure.
 imgn = 0
 def copy_img(match):
     global imgn
@@ -235,7 +262,7 @@ PY
 # ---- merge metadata: CLI flag > front matter > config > built-in default ----
 FM_title=""; FM_subtitle=""; FM_description=""; FM_author=""
 FM_recipient=""; FM_date=""; FM_cover=""; FM_cover_style=""; FM_confidential=""; FM_category=""
-FM_accent=""; FM_logo=""; FM_logo_white=""; FM_font_body=""; FM_font_head=""; FM_font_mono=""; FM_footer_text=""; FM_logo_height=""
+FM_accent=""; FM_logo=""; FM_logo_dark_bg=""; FM_font_body=""; FM_font_head=""; FM_font_mono=""; FM_footer_text=""; FM_logo_height=""
 if [[ -f "$BUILD/meta.kv" ]]; then
   while IFS='=' read -r k v; do
     case "$k" in
@@ -251,7 +278,7 @@ if [[ -f "$BUILD/meta.kv" ]]; then
       category)     FM_category="$v";;
       accent)       FM_accent="$v";;
       logo)         FM_logo="$v";;
-      logo_white)   FM_logo_white="$v";;
+      logo_dark_bg)   FM_logo_dark_bg="$v";;
       logo_height)  FM_logo_height="$v";;
       font_body)    FM_font_body="$v";;
       font_head)    FM_font_head="$v";;
@@ -304,10 +331,12 @@ COMMON=( -V title="$TITLE" )
 [[ "$COVER" == "1" ]] && COMMON+=(-V cover=true)
 [[ "$COVER" == "1" && "$COVER_STYLE" == "gradient" ]] && COMMON+=(-V cover_style=gradient)
 
-# Logo (a document asset): CLI flag > front matter. Resolve a relative path
-# against the source .md's directory (front matter) or the cwd (CLI), copy it
-# into the build dir, and pass the basename so Typst resolves it under --root.
-# `copy_logo VAR_VALUE BUILD_BASENAME TYPST_VAR` does this for one logo asset.
+# Logo: the CLI flag (cwd-relative) wins; otherwise the config / front-matter
+# logo already resolved by the python preprocessor to an absolute path (by origin:
+# relative to the .md for front matter, relative to the config file for config).
+# `--no-logo` drops the logo (and its white variant) for this run. `copy_logo`
+# copies the asset into the build dir and passes the basename so Typst resolves it
+# under --root. `copy_logo VAR_VALUE BUILD_BASENAME TYPST_VAR` per asset.
 copy_logo() {
   local src="$1" base="$2" var="$3" path=""
   [[ -z "$src" ]] && return 0
@@ -319,9 +348,12 @@ copy_logo() {
     COMMON+=(-V "$var=$base.${path##*.}")
   fi
 }
-copy_logo "${LOGO_CLI:-${FM_logo}}" logo logo
+LOGO="${LOGO_CLI:-${FM_logo}}"
+LOGO_DARK_BG="${LOGO_DARK_BG_CLI:-${FM_logo_dark_bg}}"
+if [[ "$NO_LOGO" == "1" ]]; then LOGO=""; LOGO_DARK_BG=""; fi
+copy_logo "$LOGO" logo logo
 # A light logo for the gradient cover; only used there (see the template).
-copy_logo "${LOGO_WHITE_CLI:-${FM_logo_white}}" logo-white logo_white
+copy_logo "$LOGO_DARK_BG" logo-dark-bg logo_dark_bg
 
 # Logo height (cover pt). CLI flag > front matter; the template defaults to
 # 40pt when unset, matching proof.

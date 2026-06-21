@@ -13,10 +13,11 @@ straight through. Determinism is built in: a fixed pandoc → Typst pipeline mea
 the same input always produces the same PDF, on any machine.
 
 imprint keeps two things apart. **How** a PDF is rendered — the theme accent,
-fonts, and default toggles — lives in a small config file: a reusable house style
-you point at any document. **What** a document says — its title, author, footer
-name, logo, and so on — lives in that document's front matter (or a CLI flag).
-So the config carries no personal data and the repo is safe to make public.
+fonts, your logo, and default toggles — lives in a small config file: a reusable
+house style you point at any document. **What** a document says — its title,
+author, footer name, recipient, and so on — lives in that document's front matter
+(or a CLI flag). Set your brand once in config; each document overrides only what
+it needs.
 
 ```bash
 imprint report.md                      # -> report.pdf
@@ -43,7 +44,7 @@ The cover comes in two styles. The **light** cover (above) is the default; pass
 anchor flowing into your theme color, with the subtitle and labels lifted into a
 brighter accent. Change `accent` and the wash re-tints with the rest of the
 document. A dark logo would vanish on it, so the gradient cover uses an optional
-light `logo_white` (and otherwise shows no cover logo).
+`logo_dark_bg` (a logo for dark backgrounds) and otherwise shows no cover logo.
 
 | Light cover (default) | Gradient cover (`--gradient`) |
 |:---------------------:|:-----------------------------:|
@@ -150,13 +151,12 @@ Then edit `~/.config/imprint/config.yaml` with your preferred accent color.
 
 ## Configure rendering (config)
 
-The config file holds **rendering settings only** — the theme (accent, fonts)
-and default toggles. It carries no document content and no personal data, so it's
-a reusable house style you apply to every document: set your accent and fonts
-here once and every PDF matches. Anything you set is just a default — a single
-document overrides it in its own front matter (and `accent`/`cover` can also be
-overridden with a CLI flag for one run). It's looked up in this order (first
-found wins):
+The config file holds your **house style** — the theme (accent, fonts), your logo,
+and the default toggles. It's reusable branding you apply to every document: set
+your accent, fonts, and logo here once and every PDF matches. Anything you set is
+just a default — a single document overrides it in its own front matter (and
+`accent` / `cover` / `--logo` / `--no-logo` can also be set with a CLI flag for one
+run). It's looked up in this order (first found wins):
 
 1. `$IMPRINT_CONFIG` — an explicit path
 2. `~/.config/imprint/config.yaml` — recommended for an installed imprint
@@ -170,11 +170,15 @@ defaults).
 accent:     "#2563EB"          # the single theme color
 font_body:  "Source Sans 3"    # body + heading font — "Source Sans 3" or "IBM Plex Sans"
 font_mono:  "JetBrains Mono"   # code font
+logo:       "logo.svg"         # your brand mark — resolved relative to this config file
 cover:      false              # title page off by default
 ```
 
-Document metadata — title, author, footer text, logo, recipient, … — does **not**
-go here; it lives in each document's front matter (next section).
+A config `logo` path is resolved relative to **the config file** (keep the asset
+beside it, or use an absolute path). Document-specific metadata — title, author,
+footer text, recipient, … — does **not** go here; it lives in each document's
+front matter (next section), which is also where you override or drop the logo
+for one document (`logo: none`).
 
 ## Metadata: front matter or flags
 
@@ -202,22 +206,22 @@ confidential: false
 
 Every value resolves by precedence: **CLI flag > front matter > config > default**.
 The first group below is **document metadata** (front matter / flags only); the
-last four are **render settings** that default from config but can be overridden
+rest are **house-style settings** that default from config but can be overridden
 per document.
 
 | Key / flag | Default | Meaning |
 |-------------|---------|------------------------------------------------|
 | `title` / `--title` | first `# H1` | Document title (the H1 is stripped from the body unless `--keep-h1`) |
-| `subtitle` / `--subtitle` | — | Shown under the title on the cover |
-| `description` / `--desc` | — | One-line summary on the cover |
+| `subtitle` / `--subtitle` | — | Shown under the title on the cover / masthead |
+| `description` / `--desc` | — | One-line summary on the cover / masthead |
 | `author` / `--author` | — | "Prepared by" on the cover; also the PDF author |
 | `footer_text` / `--footer-text` | falls back to `author` | Free text, bottom-left of every page |
 | `recipient` / `--recipient` | — | "Prepared for" on the cover |
 | `date` / `--date` | — | Free-form date string (e.g. `June 2026`) |
 | `category` / `--category` | — | Cover eyebrow + PDF keyword |
-| `logo` / `--logo` | — | Logo on the cover and in the running header (path relative to the `.md`) |
-| `logo_white` / `--logo-white` | — | Light logo used only on the **gradient** cover (the dark `logo` would vanish on the wash) |
-| `logo_height` / `--logo-height` | `40` | Cover logo height in pt (the running-header logo is always 2× the title text) |
+| `logo` / `--logo` / `--no-logo` | — (config) | Logo on the cover and running header. A config path resolves relative to the config file, a front-matter path relative to the `.md`; `logo: none` or `--no-logo` drops it |
+| `logo_dark_bg` / `--logo-dark-bg` | — (config) | Logo for a dark background, used only on the **gradient** cover (the dark `logo` would vanish on the wash) |
+| `logo_height` / `--logo-height` | `40` (config) | Cover logo height in pt (the running-header logo is always 2× the title text) |
 | `accent` / `--accent` | `#2563EB` (config) | Theme color (any hex) |
 | `cover` / `--cover` `--no-cover` | `false` (config) | Render the title page |
 | `cover_style` / `--cover-style` `--gradient` | `light` (config) | Cover look: `light` or `gradient` (an accent wash). `--gradient` also turns the cover on |

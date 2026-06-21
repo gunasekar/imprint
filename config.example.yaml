@@ -1,8 +1,8 @@
-# imprint rendering config — how PDFs are typeset, NOT what any document says.
+# imprint rendering config — your house style, NOT what any document says.
 #
-# This file holds only render-level settings: the theme and the default toggles.
-# It is reused across every document you render. Document metadata — title,
-# author, footer text, logo, recipient, date, category — lives in each
+# This file holds reusable render-level settings: the theme, fonts, the logo, and
+# the default toggles — applied to every document you render. Document-specific
+# metadata — title, author, footer text, recipient, date, category — lives in each
 # document's front matter (or a CLI flag), never here.
 #
 # Copy this to one of (first found wins):
@@ -22,6 +22,16 @@ accent:        "#2563EB"     # the single accent color (technical blue). Try #1D
 font_body:     "Source Sans 3"
 font_head:     "Source Sans 3"
 font_mono:     "JetBrains Mono"
+
+# --- Logo (house style: your brand on every document) ---
+# The logo is reusable branding, like the accent, so it can live here as a default
+# and appears on the cover and in the running header of every PDF. A path is
+# resolved relative to THIS config file (so keep the asset next to your config, or
+# use an absolute path). A document overrides it in front matter (resolved relative
+# to the .md), drops it with `logo: none`, or pass --no-logo for one run.
+# logo:         "logo.svg"           # cover + running-header mark
+# logo_dark_bg: "logo-dark-bg.svg"   # logo for a dark background; used only on the gradient cover
+# logo_height:  40                   # cover logo height, in pt
 
 # --- Default toggles (a document's front matter / CLI can flip these per file) ---
 cover:         false         # title page OFF by default; set true or pass --cover
