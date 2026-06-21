@@ -1,0 +1,313 @@
+#!/usr/bin/env bash
+# imprint — deterministic Markdown -> PDF, typeset with Typst. Markdown in, the
+# same PDF out every time.
+#
+# Usage:
+#   imprint INPUT.md [-o OUT.pdf]
+#          [--title T] [--subtitle S] [--desc D] [--author A] [--footer-text TEXT]
+#          [--recipient R] [--date D] [--category C] [--accent #HEX]
+#          [--logo PATH] [--logo-height PT]
+#          [--cover | --no-cover] [--confidential | --no-confidential] [--keep-h1]
+#
+# DOCUMENT metadata (title, author, footer text, logo, recipient, date, ...)
+# comes from the document's front matter or the CLI flags above — never from
+# config. RENDERING settings (the theme accent, fonts, and the default cover /
+# confidential toggles) come from a config file; see config.example.yaml.
+#
+# Precedence: CLI flag > front matter (document) > config (rendering) > default.
+# The cover page is OFF by default. Output defaults to <input>.pdf; the title
+# defaults to the first H1 (stripped from the body unless --keep-h1). Config is
+# looked up at $IMPRINT_CONFIG, then ~/.config/imprint/config.yaml, then ./config.yaml.
+
+set -euo pipefail
+
+# Resolve the real repo dir even when invoked through a symlink (e.g. make install).
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+HERE="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+ASSETS="$HERE/assets"
+TEMPLATES="$HERE/templates"
+
+# Locate config: explicit override, then XDG-ish user config, then repo-local.
+CONFIG=""
+for c in "${IMPRINT_CONFIG:-}" "$HOME/.config/imprint/config.yaml" "$HERE/config.yaml"; do
+  [[ -n "$c" && -f "$c" ]] && { CONFIG="$c"; break; }
+done
+
+# Output is per-run (CLI only). Everything else can come from front matter or
+# config; CLI flags, when given, override both. Empty = "not set on CLI".
+IN=""; OUT=""
+TITLE=""; SUBTITLE=""; DESC=""; AUTHOR=""; FOOTER_TEXT_CLI=""
+RECIPIENT=""; DATE=""; CONF=""; KEEP_H1=0; COVER=""; CATEGORY=""; ACCENT=""; LOGO_CLI=""; LOGO_HEIGHT_CLI=""
+
+usage() {
+  sed -n '2,15p' "$SOURCE" | sed 's/^# \{0,1\}//'
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h|--help) usage; exit 0;;
+    -o) OUT="$2"; shift 2;;
+    --title) TITLE="$2"; shift 2;;
+    --subtitle) SUBTITLE="$2"; shift 2;;
+    --desc) DESC="$2"; shift 2;;
+    --author) AUTHOR="$2"; shift 2;;
+    --footer-text) FOOTER_TEXT_CLI="$2"; shift 2;;
+    --recipient) RECIPIENT="$2"; shift 2;;
+    --date) DATE="$2"; shift 2;;
+    --category) CATEGORY="$2"; shift 2;;
+    --accent) ACCENT="$2"; shift 2;;
+    --logo) LOGO_CLI="$2"; shift 2;;
+    --logo-height) LOGO_HEIGHT_CLI="$2"; shift 2;;
+    --cover) COVER=1; shift;;
+    --no-cover) COVER=0; shift;;
+    --confidential) CONF=1; shift;;
+    --no-confidential) CONF=0; shift;;
+    --keep-h1) KEEP_H1=1; shift;;
+    -*) echo "unknown flag: $1" >&2; exit 2;;
+    *) IN="$1"; shift;;
+  esac
+done
+
+[[ -n "$IN" && -f "$IN" ]] || { echo "input markdown not found: $IN" >&2; exit 2; }
+[[ -n "$OUT" ]] || OUT="${IN%.md}.pdf"
+
+BUILD="$(mktemp -d)"
+trap 'rm -rf "$BUILD"' EXIT
+
+# ---- preprocess: config + front matter + native-MD transforms ----
+# The source .md stays pure Markdown. This step reads config.yaml (flat
+# key: value) and the document's front matter (FM overrides config), copies any
+# logo and local images into the build dir, and rewrites native constructs:
+#   ```mermaid blocks  -> SVG figure (optional `%% caption:` line -> caption)
+#   <!-- pagebreak -->  -> Typst page break
+# Merged metadata is written to meta.kv for the bash side to finalize.
+python3 - "$IN" "$BUILD" "$KEEP_H1" "$CONFIG" <<'PY'
+import sys, re, subprocess, pathlib
+src, build, keep_h1, cfgpath = sys.argv[1], pathlib.Path(sys.argv[2]), sys.argv[3] == "1", sys.argv[4]
+
+def parse_flat(text):
+    # Flat `key: value` pairs — no PyYAML dependency. Skips blanks/comments and
+    # strips one layer of matching quotes. Good enough for config + front matter.
+    out = {}
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or ":" not in line:
+            continue
+        k, v = line.split(":", 1)
+        k, v = k.strip(), v.strip()
+        if v and v[0] in ("'", '"'):
+            # Quoted value: take what's inside the quotes; anything after the
+            # closing quote (e.g. an inline `# comment`) is dropped.
+            q = v[0]
+            end = v.find(q, 1)
+            v = v[1:end] if end != -1 else v[1:]
+        elif " #" in v:
+            # Unquoted value: strip a trailing inline comment.
+            v = v.split(" #", 1)[0].strip()
+        out[k] = v
+    return out
+
+# Config holds RENDERING settings only (theme + render defaults), never document
+# metadata — see PDF_CONFIG_KEYS below.
+cfg = {}
+if cfgpath:
+    cfgp = pathlib.Path(cfgpath)
+    if cfgp.is_file():
+        cfg = parse_flat(cfgp.read_text())
+
+text = pathlib.Path(src).read_text()
+
+# Front matter: a metadata block at the very top, in either of two forms —
+#   ---            ... ---            (classic YAML fence), or
+#   <!--           ... -->            (HTML comment — invisible in every viewer).
+# The comment form is preferred: GitHub/VS Code render a leading `---` as a
+# table or rule, whereas an HTML comment is stripped everywhere.
+fm = {}
+fmm = (re.match(r'^---\r?\n(.*?)\r?\n---[ \t]*\r?\n', text, re.S)
+       or re.match(r'^<!--[ \t]*\r?\n(.*?)\r?\n-->[ \t]*\r?\n', text, re.S))
+if fmm:
+    fm = parse_flat(fmm.group(1))
+    text = text[fmm.end():]
+
+# Title: front-matter `title` wins over the first H1; the H1 is still stripped
+# from the body (unless --keep-h1) so it does not duplicate the header/cover.
+h1 = ""
+m = re.search(r'^\#\s+(.+?)\s*$', text, re.M)
+if m:
+    h1 = m.group(1).strip()
+    if not keep_h1:
+        text = text[:m.start()] + text[m.end():]
+
+# Merge: config contributes ONLY rendering settings; front matter (document
+# metadata + any per-doc render overrides) layers on top. Document fields —
+# title, author, footer_text, logo, recipient, ... — never come from config.
+PDF_CONFIG_KEYS = ("accent", "font_body", "font_head", "font_mono", "cover", "confidential")
+merged = {k: cfg[k] for k in PDF_CONFIG_KEYS if cfg.get(k) not in (None, "")}
+merged.update(fm)
+if not merged.get("title") and h1:
+    merged["title"] = h1
+
+# The logo is a document asset (front matter / CLI), resolved and copied in the
+# bash side; here we just pass its raw value through to meta.kv.
+
+# Emit recognized keys to meta.kv (bash applies CLI overrides + defaults on top).
+KEYS = ("title", "subtitle", "description", "author", "date", "recipient",
+        "category", "cover", "confidential", "accent", "logo",
+        "font_body", "font_head", "font_mono", "footer_text", "logo_height")
+meta = {k: merged[k] for k in KEYS if merged.get(k) not in (None, "")}
+(build / "meta.kv").write_text("".join(f"{k}={v}\n" for k, v in meta.items()))
+
+# Local images: copy each referenced file into the build dir (resolving relative
+# to the source .md) and rewrite the link, so Typst finds it under --root.
+# Remote URLs are left untouched. Non-empty alt text -> framed figure.
+srcdir = pathlib.Path(src).resolve().parent
+imgn = 0
+def copy_img(match):
+    global imgn
+    alt, url, tail = match.group(1), match.group(2).strip(), match.group(3) or ""
+    if re.match(r'^[a-z]+://', url):
+        return match.group(0)
+    path = url.split()[0].strip("<>")
+    cand = pathlib.Path(path)
+    if not cand.is_absolute():
+        cand = srcdir / cand
+    if not cand.is_file():
+        return match.group(0)
+    imgn += 1
+    dest = build / f"img-{imgn}{cand.suffix}"
+    dest.write_bytes(cand.read_bytes())
+    return f"![{alt}](img-{imgn}{cand.suffix}){tail}"
+text = re.sub(r'!\[([^\]]*)\]\(([^)]+)\)(\{[^}]*\})?', copy_img, text)
+
+# Page breaks: an HTML comment (native Markdown, invisible elsewhere).
+pb = "\n```{=typst}\n#pagebreak(weak: true)\n```\n"
+text = re.sub(r'(?m)^[ \t]*<!--[ \t]*(?:pagebreak|newpage)[ \t]*-->[ \t]*$', lambda _: pb, text)
+
+# Mermaid -> SVG (vector-crisp). A `%% caption: ...` line inside the block
+# becomes the figure caption and is stripped before rendering. htmlLabels:false
+# makes Mermaid emit native <text> the Typst SVG renderer can draw.
+mmcfg = build / "mermaid-config.json"
+font_body = meta.get("font_body", "Source Sans 3")
+mmcfg.write_text('{"htmlLabels":false,"fontFamily":"%s","flowchart":{"htmlLabels":false},"themeVariables":{"fontFamily":"%s"}}' % (font_body, font_body))
+n = 0
+def render(match):
+    global n
+    n += 1
+    cap, kept = "", []
+    for ln in match.group(1).splitlines():
+        cm = re.match(r'^\s*%%\s*caption:\s*(.+?)\s*$', ln)
+        if cm and not cap:
+            cap = cm.group(1).strip()
+        else:
+            kept.append(ln)
+    mmd = build / f"mermaid-{n}.mmd"
+    svg = build / f"mermaid-{n}.svg"
+    mmd.write_text("\n".join(kept))
+    subprocess.run(
+        ["mmdc", "-i", str(mmd), "-o", str(svg), "-b", "white", "-t", "neutral",
+         "-c", str(mmcfg)],
+        check=True, capture_output=True,
+    )
+    caparg = f"[{cap}]" if cap else "none"
+    return f'\n```{{=typst}}\n#figure(image("mermaid-{n}.svg", width: 100%), caption: {caparg})\n```\n'
+
+text = re.sub(r'```mermaid\n(.*?)```', render, text, flags=re.S)
+(build / "processed.md").write_text(text)
+PY
+
+# ---- merge metadata: CLI flag > front matter > config > built-in default ----
+FM_title=""; FM_subtitle=""; FM_description=""; FM_author=""
+FM_recipient=""; FM_date=""; FM_cover=""; FM_confidential=""; FM_category=""
+FM_accent=""; FM_logo=""; FM_font_body=""; FM_font_head=""; FM_font_mono=""; FM_footer_text=""; FM_logo_height=""
+if [[ -f "$BUILD/meta.kv" ]]; then
+  while IFS='=' read -r k v; do
+    case "$k" in
+      title)        FM_title="$v";;
+      subtitle)     FM_subtitle="$v";;
+      description)  FM_description="$v";;
+      author)       FM_author="$v";;
+      recipient)    FM_recipient="$v";;
+      date)         FM_date="$v";;
+      cover)        FM_cover="$v";;
+      confidential) FM_confidential="$v";;
+      category)     FM_category="$v";;
+      accent)       FM_accent="$v";;
+      logo)         FM_logo="$v";;
+      logo_height)  FM_logo_height="$v";;
+      font_body)    FM_font_body="$v";;
+      font_head)    FM_font_head="$v";;
+      font_mono)    FM_font_mono="$v";;
+      footer_text)  FM_footer_text="$v";;
+    esac
+  done < "$BUILD/meta.kv"
+fi
+
+TITLE="${TITLE:-${FM_title}}"
+SUBTITLE="${SUBTITLE:-${FM_subtitle}}"
+DESC="${DESC:-${FM_description}}"
+AUTHOR="${AUTHOR:-${FM_author}}"
+RECIPIENT="${RECIPIENT:-${FM_recipient}}"
+DATE="${DATE:-${FM_date}}"
+CATEGORY="${CATEGORY:-${FM_category}}"
+ACCENT="${ACCENT:-${FM_accent}}"
+
+# Footer text: CLI flag > front-matter footer_text > author. All document-level.
+FOOTER_TEXT="${FOOTER_TEXT_CLI:-${FM_footer_text:-${AUTHOR}}}"
+
+# Boolean toggles: CLI (1/0) wins; else front matter / config; else default off.
+truthy() { case "$1" in true|True|TRUE|1|yes|Yes|on) return 0;; *) return 1;; esac; }
+if [[ -z "$CONF"  ]]; then truthy "$FM_confidential" && CONF=1 || CONF=0; fi
+if [[ -z "$COVER" ]]; then truthy "$FM_cover"         && COVER=1 || COVER=0; fi
+
+# Build pandoc args incrementally (avoids empty-array expansion under bash 3.2 set -u).
+COMMON=( -V title="$TITLE" )
+[[ -n "$AUTHOR"      ]] && COMMON+=(-M author="$AUTHOR")
+[[ -n "$DATE"       ]] && COMMON+=(-V date="$DATE")
+[[ -n "$SUBTITLE"   ]] && COMMON+=(-V subtitle="$SUBTITLE")
+[[ -n "$DESC"       ]] && COMMON+=(-V description="$DESC")
+[[ -n "$RECIPIENT"  ]] && COMMON+=(-V recipient="$RECIPIENT")
+[[ -n "$CATEGORY"   ]] && COMMON+=(-V category="$CATEGORY")
+[[ -n "$ACCENT"     ]] && COMMON+=(-V accent="$ACCENT")
+[[ -n "$FOOTER_TEXT" ]] && COMMON+=(-V footer_text="$FOOTER_TEXT")
+[[ -n "$FM_font_body" ]] && COMMON+=(-V font_body="$FM_font_body")
+[[ -n "$FM_font_head" ]] && COMMON+=(-V font_head="$FM_font_head")
+[[ -n "$FM_font_mono" ]] && COMMON+=(-V font_mono="$FM_font_mono")
+[[ "$CONF"  == "1" ]] && COMMON+=(-V confidential=true)
+[[ "$COVER" == "1" ]] && COMMON+=(-V cover=true)
+
+# Logo (a document asset): CLI flag > front matter. Resolve a relative path
+# against the source .md's directory (front matter) or the cwd (CLI), copy it
+# into the build dir, and pass the basename so Typst resolves it under --root.
+LOGO="${LOGO_CLI:-${FM_logo}}"
+if [[ -n "$LOGO" ]]; then
+  LOGOPATH=""
+  if [[ "$LOGO" = /* && -f "$LOGO" ]]; then LOGOPATH="$LOGO"
+  elif [[ -f "$(dirname "$IN")/$LOGO" ]]; then LOGOPATH="$(dirname "$IN")/$LOGO"
+  elif [[ -f "$LOGO" ]]; then LOGOPATH="$LOGO"; fi
+  if [[ -n "$LOGOPATH" ]]; then
+    cp "$LOGOPATH" "$BUILD/logo.${LOGOPATH##*.}"
+    COMMON+=(-V logo="logo.${LOGOPATH##*.}")
+  fi
+fi
+
+# Logo height (cover pt). CLI flag > front matter; the template defaults to
+# 40pt when unset, matching proof.
+LOGO_HEIGHT="${LOGO_HEIGHT_CLI:-${FM_logo_height}}"
+[[ -n "$LOGO_HEIGHT" ]] && COMMON+=(-V logo_height="$LOGO_HEIGHT")
+
+# --columns=1 forces pandoc to translate every pipe table's dash ratios into
+# explicit column widths. --wrap=none keeps it from hard-wrapping generated Typst.
+pandoc "$BUILD/processed.md" -t typst --template "$TEMPLATES/default.typ" \
+  --columns=1 --wrap=none "${COMMON[@]}" -o "$BUILD/doc.typ"
+# --ignore-system-fonts keeps the render deterministic: only the bundled fonts
+# are used, so output is identical regardless of what's installed on the machine.
+typst compile "$BUILD/doc.typ" "$BUILD/out.pdf" --root "$BUILD" \
+  --font-path "$ASSETS/fonts" --ignore-system-fonts
+
+cp "$BUILD/out.pdf" "$OUT"
+echo "wrote $OUT"

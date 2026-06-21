@@ -1,0 +1,32 @@
+# Personal config — keep your identity out of the public repo
+config.yaml
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Python bytecode (imprint shells out to an inline python3 preprocessor)
+__pycache__/
+*.py[cod]
+
+# Environment / secrets
+.env
+.env.*
+
+# Generated PDFs — imprint renders these from Markdown; output, never source
+*.pdf
+
+# Scratch working copies
+.tmp/

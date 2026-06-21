@@ -1,0 +1,28 @@
+# imprint rendering config — how PDFs are typeset, NOT what any document says.
+#
+# This file holds only render-level settings: the theme and the default toggles.
+# It is reused across every document you render. Document metadata — title,
+# author, footer text, logo, recipient, date, category — lives in each
+# document's front matter (or a CLI flag), never here.
+#
+# Copy this to one of (first found wins):
+#   $IMPRINT_CONFIG                 # explicit path via env var
+#   ~/.config/imprint/config.yaml   # recommended for an installed imprint
+#   ./config.yaml                 # repo-local (gitignored), handy for dev
+#
+# Every value is a DEFAULT. A document's front matter or a CLI flag overrides it.
+# All keys are optional; imprint renders fine with no config at all.
+
+# --- Theme ---
+accent:        "#2563EB"     # the single accent color (technical blue). Try #1D4ED8, #4F46E5, #0D9488 …
+# Bundled families (set the names below to switch):
+#   sans — "Source Sans 3" (default) or "IBM Plex Sans"
+#   mono — "JetBrains Mono"
+# To use anything else, drop its TTFs into assets/fonts/ and name the family here.
+font_body:     "Source Sans 3"
+font_head:     "Source Sans 3"
+font_mono:     "JetBrains Mono"
+
+# --- Default toggles (a document's front matter / CLI can flip these per file) ---
+cover:         false         # title page OFF by default; set true or pass --cover
+confidential:  false         # adds a "Confidential" marker when true

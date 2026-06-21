@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # shellcheck ships preinstalled on GitHub-hosted ubuntu runners.
+      - name: Lint imprint and install.sh
+        run: shellcheck imprint install.sh
+
+  render:
+    name: Render smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Pandoc's Typst writer needs pandoc >= 3, newer than apt ships — pull the
+      # latest release .deb. GITHUB_TOKEN lifts the unauthenticated API rate limit.
+      - name: Install pandoc
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          url=$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" \
+            https://api.github.com/repos/jgm/pandoc/releases/latest \
+            | grep -o 'https://[^"]*-amd64\.deb' | head -1)
+          curl -fsSL -o /tmp/pandoc.deb "$url"
+          sudo dpkg -i /tmp/pandoc.deb || sudo apt-get -f install -y
+
+      - name: Install Typst
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          url=$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" \
+            https://api.github.com/repos/typst/typst/releases/latest \
+            | grep -o 'https://[^"]*x86_64-unknown-linux-musl\.tar\.xz' | head -1)
+          curl -fsSL "$url" | tar -xJ
+          sudo install typst-*/typst /usr/local/bin/typst
+
+      - name: Show toolchain
+        run: |
+          pandoc --version | head -1
+          typst --version
+          python3 --version
+          make check
+
+      # The bundled sample uses Mermaid (needs headless Chromium); CI renders a
+      # Mermaid-free fixture so the core pandoc -> Typst path stays deterministic.
+      - name: Render the CI fixture
+        run: ./imprint tests/ci-fixture.md -o /tmp/out.pdf
+
+      - name: Assert a valid PDF was produced
+        run: |
+          test -s /tmp/out.pdf
+          head -c4 /tmp/out.pdf | grep -q '%PDF'
+          echo "rendered $(wc -c < /tmp/out.pdf) bytes"
+
+      - name: Upload the rendered PDF
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ci-fixture-pdf
+          path: /tmp/out.pdf
+          if-no-files-found: ignore
