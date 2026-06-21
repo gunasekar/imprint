@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 196 64" role="img" aria-label="imprint">
+  <!-- Light lockup for the dark gradient cover. The wordmark is all white so it
+       reads against the accent wash; the mark's accent lives in the page lines,
+       which sit on the white front sheet (not on the gradient). -->
+  <!-- Document-pages mark: a back sheet peeking behind a front sheet -->
+  <rect x="24" y="12" width="24" height="38" rx="3" fill="#FFFFFF" fill-opacity="0.45"/>
+  <rect x="14" y="16" width="26" height="40" rx="4" fill="#FFFFFF"/>
+  <!-- Text lines on the white front sheet, in the accent so the mark keeps colour -->
+  <rect x="19" y="25" width="16" height="2.6" rx="1.3" fill="#2563EB"/>
+  <rect x="19" y="31" width="16" height="2.6" rx="1.3" fill="#2563EB"/>
+  <rect x="19" y="37" width="11" height="2.6" rx="1.3" fill="#2563EB"/>
+  <!-- Wordmark lockup: all white for a clean knockout on the dark wash -->
+  <text x="60" y="43" font-family="IBM Plex Sans, Source Sans 3, sans-serif"
+        font-size="30" font-weight="700" letter-spacing="-0.5" fill="#FFFFFF">imprint</text>
+</svg>

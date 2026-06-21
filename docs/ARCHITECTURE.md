@@ -80,7 +80,10 @@ the rest is plain Typst. Structure:
   callouts together. Grays (graphite ink, muted, hairline, surface) are fixed.
 - **`conf(...)`** — a function holding every `show`/`set` rule (headings, code,
   callouts, tables, figures), the optional cover page, and the running
-  header/footer. The body is passed in as `doc`.
+  header/footer. The body is passed in as `doc`. The cover has two styles sharing
+  one `coverBody` closure: the default light page and an opt-in gradient wash
+  (`cover_style: gradient`) derived from `accent` — see
+  [ADR 0004](decisions/0004-optional-gradient-cover.md).
 - **`#show: doc => conf(...)`** wires the pandoc-filled metadata into `conf` and
   renders `$body$`.
 
@@ -91,6 +94,7 @@ the rest is plain Typst. Structure:
 | `accent` | `#2563EB` (config) | links, H1 rule, table header tint, callout bar |
 | `accent-dark` | `accent.darken(22%)` | links, eyebrow labels, bold lead-ins |
 | `accent-soft` | `accent.lighten(90%)` | callout / table-head fill |
+| `cover-grad` | `accent.darken(62%)` → `accent` | gradient cover wash (opt-in); cover text is white for contrast |
 | `heading-ink` | `#111827` | headings |
 | `ink` | `#1F2937` | body text |
 | `muted` | `#6B7280` | captions, footer, labels |

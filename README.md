@@ -38,6 +38,16 @@ header/cover logo, and a confidential footer. Same Markdown, different switches.
 | <img src="docs/images/sample-minimal-1.png" width="250" alt="Minimal cover"> | <img src="docs/images/sample-minimal-2.png" width="250" alt="Body page"> | <img src="docs/images/sample-minimal-3.png" width="250" alt="Diagram page"> |
 | <img src="docs/images/sample-full-1.png" width="250" alt="Cover with logo, recipient, category, confidential"> | <img src="docs/images/sample-full-2.png" width="250" alt="Body page with header logo"> | <img src="docs/images/sample-full-3.png" width="250" alt="Diagram page, confidential footer"> |
 
+The cover comes in two styles. The **light** cover (above) is the default; pass
+`--gradient` (or `cover_style: gradient`) for a diagonal accent wash — derived
+entirely from your theme color, so it re-tints with the rest of the document. A
+dark logo would vanish on the wash, so the gradient cover uses an optional light
+`logo_white` (and otherwise shows no cover logo).
+
+| Light cover (default) | Gradient cover (`--gradient`) |
+|:---------------------:|:-----------------------------:|
+| <img src="docs/images/sample-full-1.png" width="300" alt="Light cover"> | <img src="docs/images/sample-gradient-1.png" width="300" alt="Gradient accent-wash cover"> |
+
 Regenerate these with `make preview` after a theme change.
 
 ## What you get
@@ -48,7 +58,9 @@ Regenerate these with `make preview` after a theme change.
   for one.
 - **Optional title page** — pass `--cover` (or `cover: true`) for a calm, light
   cover: title, subtitle, description, a `Prepared for / Prepared by` band, and
-  an optional category eyebrow.
+  an optional category eyebrow. Prefer something bolder? `--gradient` (or
+  `cover_style: gradient`) swaps it for a diagonal accent wash derived from your
+  theme color.
 - **Graphite + blue theme** — graphite text, a single configurable accent (a
   professional technical blue by default) on links, rules, H1 underlines, table
   headers, and callouts. Change one value in config to re-tint the whole document.
@@ -177,7 +189,7 @@ confidential: false
 
 Every value resolves by precedence: **CLI flag > front matter > config > default**.
 The first group below is **document metadata** (front matter / flags only); the
-last three are **render settings** that default from config but can be overridden
+last four are **render settings** that default from config but can be overridden
 per document.
 
 | Key / flag | Default | Meaning |
@@ -191,9 +203,11 @@ per document.
 | `date` / `--date` | — | Free-form date string (e.g. `June 2026`) |
 | `category` / `--category` | — | Cover eyebrow + PDF keyword |
 | `logo` / `--logo` | — | Logo on the cover and in the running header (path relative to the `.md`) |
+| `logo_white` / `--logo-white` | — | Light logo used only on the **gradient** cover (the dark `logo` would vanish on the wash) |
 | `logo_height` / `--logo-height` | `40` | Cover logo height in pt (the running-header logo is always 2× the title text) |
 | `accent` / `--accent` | `#2563EB` (config) | Theme color (any hex) |
 | `cover` / `--cover` `--no-cover` | `false` (config) | Render the title page |
+| `cover_style` / `--cover-style` `--gradient` | `light` (config) | Cover look: `light` or `gradient` (an accent wash). `--gradient` also turns the cover on |
 | `confidential` / `--confidential` | `false` (config) | Adds a "Confidential" marker |
 
 ## Authoring conventions

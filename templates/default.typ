@@ -23,12 +23,33 @@
 #let head-font = "$if(font_head)$$font_head$$else$Source Sans 3$endif$"
 #let mono-font = "$if(font_mono)$$font_mono$$else$JetBrains Mono$endif$"
 #let logo-path = $if(logo)$"$logo$"$else$none$endif$
+// A light logo for the dark gradient cover (logo_white / --logo-white). The dark
+// `logo` would vanish on the wash, so the gradient cover uses this when set and
+// otherwise shows no cover logo. Body-page headers always use the normal `logo`.
+#let logo-white-path = $if(logo_white)$"$logo_white$"$else$none$endif$
 // Running header/footer text size. The header logo derives from this — it is set
 // to twice the title text so the logo and title read as a balanced pair on one line.
 #let head-size = 8.5pt
 // Cover logo height in pt (tunable via logo_height / --logo-height); default 40pt.
 // The running-header logo is NOT set here — it is always 2x head-size.
 #let logo-height = ($if(logo_height)$$logo_height$$else$40$endif$) * 1pt
+// Cover style: "light" (default, a calm pale cover) or "gradient" (an accent wash).
+#let cover-style = "$if(cover_style)$$cover_style$$else$light$endif$"
+// Gradient cover (opt-in): a 45° diagonal wash derived entirely from `accent` —
+// a deep shade at the top-left flowing to the accent at the bottom-right — with
+// two soft accent glows layered over it. Single-accent, so it re-tints with the
+// rest of the theme.
+#let cover-grad = gradient.linear(angle: 45deg,
+  (accent.darken(62%), 0%), (accent.darken(20%), 58%), (accent, 100%))
+#let cover-glow = accent.lighten(20%)
+#let cover-glows = {
+  place(top + left, rect(width: 100%, height: 100%, fill: gradient.radial(
+    (cover-glow.transparentize(68%), 0%), (cover-glow.transparentize(100%), 70%),
+    (cover-glow.transparentize(100%), 100%), center: (85%, 18%), radius: 75%)))
+  place(top + left, rect(width: 100%, height: 100%, fill: gradient.radial(
+    (cover-glow.transparentize(80%), 0%), (cover-glow.transparentize(100%), 70%),
+    (cover-glow.transparentize(100%), 100%), center: (12%, 82%), radius: 75%)))
+}
 
 // Sleek section divider for `---`: a short, centred accent rule with round caps.
 #let horizontalrule = align(center, block(above: 1.6em, below: 1.6em,
@@ -143,10 +164,52 @@ $endif$
   }
 
   // ===================== OPTIONAL COVER (off by default) =====================
-  // A calm, light title page: category eyebrow + optional CONFIDENTIAL marker
-  // top-right, optional logo top-left, the title block, then a "Prepared for /
-  // Prepared by" band. Shown only when `cover: true`.
-  if cover {
+  // A title page: category eyebrow + optional CONFIDENTIAL marker top-right, an
+  // optional logo top-left, the title block, then a "Prepared for / Prepared by"
+  // band. Shown only when `cover: true`, in one of two styles (`cover_style`):
+  // the default calm "light" cover, or a "gradient" accent wash. The layout is
+  // shared; the two styles differ only in their fills and logo.
+  let coverBody(titleFill, subFill, descFill, eyebrowFill, confFill, labelFill, valueFill, logoBlock) = {
+    set par(justify: false, leading: 0.5em)
+    let eyebrow(fill, body) = text(size: 8pt, font: head-font, tracking: 0.16em, weight: 700, fill: fill)[#body]
+    let topTags = ()
+    if category != none { topTags.push(eyebrow(eyebrowFill, upper(category))) }
+    if confidential { topTags.push(eyebrow(confFill, [CONFIDENTIAL])) }
+    grid(columns: (1fr, auto), align: (left + horizon, right + horizon),
+      logoBlock,
+      if topTags.len() > 0 { align(right, par(leading: 0.7em, topTags.join(linebreak()))) } else [],
+    )
+    v(1fr)
+    if title != none { text(font: head-font, size: 32pt, fill: titleFill, weight: 600)[#title] }
+    if subtitle != none { v(0.5em); text(size: 15pt, fill: subFill, weight: 600)[#subtitle] }
+    if description != none { v(0.9em); block(width: 82%, text(size: 11pt, fill: descFill)[#description]) }
+    let metaCol(label, value) = stack(spacing: 0.55em,
+      text(size: 8pt, font: head-font, tracking: 0.18em, weight: 700, fill: labelFill)[#label],
+      text(size: 12pt, weight: 500, fill: valueFill)[#value],
+    )
+    let cells = ()
+    if recipient != none { cells.push(metaCol("PREPARED FOR", recipient)) }
+    if authors.len() > 0 { cells.push(metaCol("PREPARED BY", authors.join(", "))) }
+    if cells.len() > 0 {
+      v(1.7em)
+      grid(columns: cells.map(_ => auto), column-gutter: 3.5em, ..cells)
+    }
+    v(2.2fr)
+  }
+  if cover and cover-style == "gradient" {
+    page(fill: cover-grad, background: cover-glows, numbering: none, header: none,
+      margin: (x: 2.2cm, top: 2.5cm, bottom: 2.0cm),
+      footer: {
+        set text(size: 8.5pt, fill: white.transparentize(25%))
+        grid(columns: (1fr, auto),
+          if confidential [Proprietary — Do not distribute] else [],
+          align(right)[#if date != none { date }])
+      },
+      coverBody(white, white, white.transparentize(22%), white.transparentize(10%),
+        white.transparentize(34%), white.transparentize(12%), white,
+        if logo-white-path != none { image(logo-white-path, height: logo-height, alt: "logo") } else []),
+    )
+  } else if cover {
     page(numbering: none, header: none,
       footer: {
         set text(size: 8.5pt, fill: muted)
@@ -154,33 +217,8 @@ $endif$
           if confidential [Proprietary — Do not distribute] else [],
           align(right)[#if date != none { date }])
       },
-      {
-        set par(justify: false, leading: 0.5em)
-        let eyebrow(fill, body) = text(size: 8pt, font: head-font, tracking: 0.16em, weight: 700, fill: fill)[#body]
-        let topTags = ()
-        if category != none { topTags.push(eyebrow(accent-dark, upper(category))) }
-        if confidential { topTags.push(eyebrow(muted, [CONFIDENTIAL])) }
-        grid(columns: (1fr, auto), align: (left + horizon, right + horizon),
-          if logo-path != none { image(logo-path, height: logo-height, alt: "logo") } else [],
-          if topTags.len() > 0 { align(right, par(leading: 0.7em, topTags.join(linebreak()))) } else [],
-        )
-        v(1fr)
-        if title != none { text(font: head-font, size: 32pt, fill: heading-ink, weight: 600)[#title] }
-        if subtitle != none { v(0.5em); text(size: 15pt, fill: accent-dark, weight: 600)[#subtitle] }
-        if description != none { v(0.9em); block(width: 82%, text(size: 11pt, fill: muted)[#description]) }
-        let metaCol(label, value) = stack(spacing: 0.55em,
-          text(size: 8pt, font: head-font, tracking: 0.18em, weight: 700, fill: accent-dark)[#label],
-          text(size: 12pt, weight: 500, fill: ink)[#value],
-        )
-        let cells = ()
-        if recipient != none { cells.push(metaCol("PREPARED FOR", recipient)) }
-        if authors.len() > 0 { cells.push(metaCol("PREPARED BY", authors.join(", "))) }
-        if cells.len() > 0 {
-          v(1.7em)
-          grid(columns: cells.map(_ => auto), column-gutter: 3.5em, ..cells)
-        }
-        v(2.2fr)
-      },
+      coverBody(heading-ink, accent-dark, muted, accent-dark, muted, accent-dark, ink,
+        if logo-path != none { image(logo-path, height: logo-height, alt: "logo") } else []),
     )
   }
 

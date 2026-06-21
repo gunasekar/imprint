@@ -57,11 +57,16 @@ preview:
 	./imprint examples/sample.md -o .tmp/preview/minimal.pdf
 	./imprint examples/sample.md --recipient "Acme Corp" --category "Documentation" \
 	  --confidential --logo logo.svg -o .tmp/preview/full.pdf
+	./imprint examples/sample.md --recipient "Acme Corp" --category "Documentation" \
+	  --confidential --gradient --logo-white logo-white.svg -o .tmp/preview/gradient.pdf
 	@for v in minimal full; do \
 	  pdftoppm -png -r 150 ".tmp/preview/$$v.pdf" ".tmp/preview/$$v"; \
 	  for p in 1 2 3; do \
 	    magick ".tmp/preview/$$v-$$p.png" -resize 900x \
-	      -bordercolor '#D8DBE0' -border 1 "docs/images/sample-$$v-$$p.png"; \
+	      -bordercolor '#D8DBE0' -border 1 -strip "docs/images/sample-$$v-$$p.png"; \
 	  done; \
 	done
-	@echo "wrote docs/images/sample-{minimal,full}-{1,2,3}.png"
+	@pdftoppm -png -r 150 -f 1 -l 1 .tmp/preview/gradient.pdf .tmp/preview/gradient
+	@magick .tmp/preview/gradient-1.png -resize 900x \
+	  -bordercolor '#D8DBE0' -border 1 -strip docs/images/sample-gradient-1.png
+	@echo "wrote docs/images/sample-{minimal,full}-{1,2,3}.png + sample-gradient-1.png"

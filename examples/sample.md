@@ -20,7 +20,9 @@ cover:        true                 # title page; OFF by default — omit to star
 # category:     "Documentation"    # cover eyebrow + PDF keyword
 # confidential: true               # stamps a "Confidential" marker on every page
 # logo:         "logo.svg"         # cover + running-header mark (path relative to this .md)
+# logo_white:   "logo-white.svg"   # light logo for the gradient cover (the dark logo would vanish there)
 # logo_height:  40                 # cover logo height, in pt
+# cover_style:  gradient           # swap the calm light cover for an accent wash (implies cover: true)
 
 # --- House style: normally set once in config.yaml; override here only for a one-off look ---
 # accent:       "#2563EB"          # the single theme color (links, rules, table headers)

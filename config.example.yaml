@@ -25,4 +25,5 @@ font_mono:     "JetBrains Mono"
 
 # --- Default toggles (a document's front matter / CLI can flip these per file) ---
 cover:         false         # title page OFF by default; set true or pass --cover
+cover_style:   light         # cover look: "light" (default) or "gradient" (an accent wash)
 confidential:  false         # adds a "Confidential" marker when true
