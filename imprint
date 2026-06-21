@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# imprint — deterministic Markdown -> PDF, typeset with Typst. Markdown in, the
-# same PDF out every time.
+# imprint — turn Markdown into branded, typeset PDFs: the specs, design docs, and
+# reports that need to look official. One command gives a title page (or a title
+# masthead), a running header and footer, and a consistent house style, with your
+# content flowed straight through. A fixed pandoc -> Typst pipeline is
+# deterministic — the same input produces the same PDF, on any machine.
 #
 # Usage:
 #   imprint INPUT.md [-o OUT.pdf]
@@ -11,11 +14,12 @@
 #          [--confidential | --no-confidential] [--keep-h1]
 #          [--profile NAME | --list-profiles]
 #
-# DOCUMENT metadata (title, author, footer text, recipient, date, ...) comes from
-# the document's front matter or the CLI flags above — never from config. HOUSE
-# STYLE (the theme accent, fonts, the logo, and the default cover / confidential
-# toggles) comes from a config file and is reused across documents, with a
-# per-document override; see config.example.yaml.
+# imprint keeps two things apart. HOUSE STYLE — the theme accent, fonts, your logo,
+# and the default cover / confidential toggles — lives in a config file: a reusable
+# house style you set once and apply to every document. DOCUMENT metadata — title,
+# author, footer text, recipient, date — lives in the document's front matter (or a
+# CLI flag above). Each document overrides only what it needs; see
+# config.example.yaml.
 #
 # For multiple house styles (e.g. one per org), keep a named config ("profile") at
 # ~/.config/imprint/profiles/<name>.yaml and select it with --profile <name> (or
@@ -23,11 +27,12 @@
 # profile's logo path resolves next to the profile, so each profile's assets live
 # together.
 #
-# Precedence: CLI flag > front matter (document) > config (rendering) > default.
-# The cover page is OFF by default. Output defaults to <input>.pdf; the title
-# defaults to the first H1 (stripped from the body unless --keep-h1). Config is
-# looked up at: --profile, $IMPRINT_CONFIG, IMPRINT_PROFILE profile,
-# ~/.config/imprint/config.yaml, then ./config.yaml.
+# Precedence: CLI flag > front matter (document) > config (house style) > default.
+# No cover by default — the first page opens with a title masthead and the running
+# header begins on page 2; --cover adds a separate title page. Output defaults to
+# <input>.pdf; the title defaults to the first H1 (stripped unless --keep-h1).
+# Config lookup (first found wins): --profile, $IMPRINT_CONFIG, IMPRINT_PROFILE,
+# ~/.config/imprint/config.yaml, ./config.yaml.
 
 set -euo pipefail
 
@@ -57,7 +62,7 @@ RECIPIENT=""; DATE=""; CONF=""; KEEP_H1=0; COVER=""; CATEGORY=""; ACCENT=""; LOG
 COVER_STYLE=""; LOGO_DARK_BG_CLI=""; NO_LOGO=0; PROFILE_CLI=""; LIST_PROFILES=0
 
 usage() {
-  sed -n '2,24p' "$SOURCE" | sed 's/^# \{0,1\}//'
+  sed -n '2,28p' "$SOURCE" | sed 's/^# \{0,1\}//'
 }
 
 while [[ $# -gt 0 ]]; do
@@ -407,10 +412,14 @@ LOGO_HEIGHT="${LOGO_HEIGHT_CLI:-${FM_logo_height}}"
 # explicit column widths. --wrap=none keeps it from hard-wrapping generated Typst.
 pandoc "$BUILD/processed.md" -t typst --template "$TEMPLATES/default.typ" \
   --columns=1 --wrap=none "${COMMON[@]}" -o "$BUILD/doc.typ"
-# --ignore-system-fonts keeps the render deterministic: only the bundled fonts
-# are used, so output is identical regardless of what's installed on the machine.
+# Fonts: the bundled families, plus an optional user font dir for custom faces a
+# profile names (e.g. a brand's typeface). --ignore-system-fonts keeps the render
+# deterministic — only these paths are searched, never the machine's installed
+# fonts — so output depends solely on the bundled fonts and your own font dir.
+FONT_PATHS=( --font-path "$ASSETS/fonts" )
+[[ -d "$CONFIG_HOME/fonts" ]] && FONT_PATHS+=( --font-path "$CONFIG_HOME/fonts" )
 typst compile "$BUILD/doc.typ" "$BUILD/out.pdf" --root "$BUILD" \
-  --font-path "$ASSETS/fonts" --ignore-system-fonts
+  "${FONT_PATHS[@]}" --ignore-system-fonts
 
 cp "$BUILD/out.pdf" "$OUT"
 echo "wrote $OUT"

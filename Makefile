@@ -63,26 +63,23 @@ example:
 	./imprint examples/sample.md -o examples/sample.pdf
 	@echo "wrote examples/sample.pdf"
 
-## Regenerate the README snapshot grid (docs/images/) from examples/sample.md.
-## Needs pdftoppm (poppler) and magick (ImageMagick) in addition to imprint.
+## Regenerate the README snapshot grid (docs/images/) from examples/sample.md —
+## the same source with different switches: the four cover variants plus a body
+## and diagram page. Needs pdftoppm (poppler) and magick (ImageMagick).
 preview:
 	@mkdir -p docs/images .tmp/preview
-	./imprint examples/sample.md -o .tmp/preview/minimal.pdf
-	./imprint examples/sample.md --recipient "Acme Corp" --category "Documentation" \
-	  --confidential --logo logo.svg -o .tmp/preview/full.pdf
-	./imprint examples/sample.md --recipient "Acme Corp" --category "Documentation" \
-	  --confidential --gradient --logo-dark-bg logo-dark-bg.svg -o .tmp/preview/gradient.pdf
-	./imprint examples/sample.md --no-cover -o .tmp/preview/nocover.pdf
-	@for v in minimal full; do \
-	  pdftoppm -png -r 150 ".tmp/preview/$$v.pdf" ".tmp/preview/$$v"; \
-	  for p in 1 2 3; do \
-	    magick ".tmp/preview/$$v-$$p.png" -resize 900x \
-	      -bordercolor '#D8DBE0' -border 1 -strip "docs/images/sample-$$v-$$p.png"; \
-	  done; \
+	./imprint examples/sample.md --no-cover --no-confidential -o .tmp/preview/nocover.pdf
+	./imprint examples/sample.md --cover --no-gradient --no-logo --no-confidential -o .tmp/preview/cover.pdf
+	./imprint examples/sample.md --cover --no-gradient --logo logo.svg --no-confidential -o .tmp/preview/coverlogo.pdf
+	./imprint examples/sample.md --gradient --logo logo.svg --logo-dark-bg logo-dark-bg.svg --no-confidential -o .tmp/preview/gradient.pdf
+	@# cover variants — page 1 of each (pair = "src outname")
+	@for pair in "nocover nocover" "cover cover" "coverlogo cover-logo" "gradient cover-logo-gradient"; do \
+	  set -- $$pair; \
+	  pdftoppm -png -r 150 -f 1 -l 1 ".tmp/preview/$$1.pdf" ".tmp/preview/$$1-c"; \
+	  magick ".tmp/preview/$$1-c-1.png" -resize 900x -bordercolor '#D8DBE0' -border 1 -strip "docs/images/sample-$$2.png"; \
 	done
-	@for v in gradient nocover; do \
-	  pdftoppm -png -r 150 -f 1 -l 1 ".tmp/preview/$$v.pdf" ".tmp/preview/$$v"; \
-	  magick ".tmp/preview/$$v-1.png" -resize 900x \
-	    -bordercolor '#D8DBE0' -border 1 -strip "docs/images/sample-$$v-1.png"; \
-	done
-	@echo "wrote docs/images/sample-{minimal,full}-{1,2,3}.png + sample-{gradient,nocover}-1.png"
+	@# body (page 2) and diagram (page 3), from the cover+logo render
+	@pdftoppm -png -r 150 -f 2 -l 3 .tmp/preview/coverlogo.pdf .tmp/preview/cl
+	@magick .tmp/preview/cl-2.png -resize 900x -bordercolor '#D8DBE0' -border 1 -strip docs/images/sample-body.png
+	@magick .tmp/preview/cl-3.png -resize 900x -bordercolor '#D8DBE0' -border 1 -strip docs/images/sample-diagram.png
+	@echo "wrote docs/images/sample-{nocover,cover,cover-logo,cover-logo-gradient,body,diagram}.png"

@@ -27,40 +27,24 @@ imprint report.md --accent "#2563EB"   # re-theme for one run
 
 ## What it looks like
 
-Both rows below are the **same** [`examples/sample.md`](examples/sample.md)
-rendered by imprint — left to right: the cover, a body page, and the diagram
-page. The **top row** uses only the common front matter. The **bottom row** turns
-on the optional cover fields — `recipient`, `category`, `confidential`, and
-`logo` — which add the "Prepared for" line, the eyebrow + confidential marker, a
-header/cover logo, and a confidential footer. Same Markdown, different switches.
+All six are the **same** [`examples/sample.md`](examples/sample.md) — only the
+switches differ. The cover is **off by default**: with no cover, the first page
+opens with a **masthead** (title, subtitle, description) and the running header
+begins on page 2. Add `--cover` for a title page, drop in your `logo`, or switch to
+a `--gradient` accent wash. The last two cells are a body page and the diagram page.
 
-| Cover | Body | Diagram |
-|:-----:|:----:|:-------:|
-| <img src="docs/images/sample-minimal-1.png" width="250" alt="Minimal cover"> | <img src="docs/images/sample-minimal-2.png" width="250" alt="Body page"> | <img src="docs/images/sample-minimal-3.png" width="250" alt="Diagram page"> |
-| <img src="docs/images/sample-full-1.png" width="250" alt="Cover with logo, recipient, category, confidential"> | <img src="docs/images/sample-full-2.png" width="250" alt="Body page with header logo"> | <img src="docs/images/sample-full-3.png" width="250" alt="Diagram page, confidential footer"> |
+| Without cover (masthead) | Cover (`--cover`) | Cover + logo |
+|:---:|:---:|:---:|
+| <img src="docs/images/sample-nocover.png" width="250" alt="No cover — title masthead on page 1"> | <img src="docs/images/sample-cover.png" width="250" alt="Light cover, no logo"> | <img src="docs/images/sample-cover-logo.png" width="250" alt="Light cover with logo"> |
 
-The cover comes in two styles. The **light** cover (above) is the default; pass
-`--gradient` (or `cover_style: gradient`) for a diagonal wash — a dark slate
-anchor flowing into your theme color, with the subtitle and labels lifted into a
-brighter accent. Change `accent` and the wash re-tints with the rest of the
-document. A dark logo would vanish on it, so the gradient cover uses an optional
-`logo_dark_bg` (a logo for dark backgrounds) and otherwise shows no cover logo.
+| Cover + logo + gradient | Body page | Diagram |
+|:---:|:---:|:---:|
+| <img src="docs/images/sample-cover-logo-gradient.png" width="250" alt="Gradient accent-wash cover with logo"> | <img src="docs/images/sample-body.png" width="250" alt="Body page — heading, callout, table, code"> | <img src="docs/images/sample-diagram.png" width="250" alt="Mermaid diagram as a framed figure"> |
 
-| Light cover (default) | Gradient cover (`--gradient`) |
-|:---------------------:|:-----------------------------:|
-| <img src="docs/images/sample-full-1.png" width="300" alt="Light cover"> | <img src="docs/images/sample-gradient-1.png" width="300" alt="Gradient accent-wash cover"> |
-
-The cover itself is **off by default**. Without one, imprint opens the first page
-with a **masthead** — the title, subtitle, and description as a title block over a
-thin rule, with the content flowing straight after — and the running header picks
-up from page 2. So a cover-less document still leads with a proper title, not just
-the small header.
-
-| Without cover — masthead (default) | With cover — title page |
-|:----------------------------------:|:-----------------------:|
-| <img src="docs/images/sample-nocover-1.png" width="300" alt="No cover: title/subtitle/description masthead on the first page"> | <img src="docs/images/sample-minimal-1.png" width="300" alt="Cover title page"> |
-
-Regenerate these with `make preview` after a theme change.
+The **gradient** is a dark slate wash flowing into your `accent`, with the subtitle
+and labels lifted into a brighter accent; a dark logo would vanish on it, so it
+uses an optional `logo_dark_bg`. Regenerate all six with `make preview` after a
+theme change.
 
 ## What you get
 
@@ -83,7 +67,9 @@ Regenerate these with `make preview` after a theme change.
 - **Callouts** — any Markdown block quote becomes a tinted note box.
 - **Self-contained fonts** — Source Sans 3 (default) or IBM Plex Sans for
   body/headings, JetBrains Mono for code; all bundled and embedded, and rendering
-  ignores system fonts, so output is identical on any machine.
+  ignores system fonts, so output is identical on any machine. Need a brand
+  typeface? Drop its TTFs in `~/.config/imprint/fonts/` and name the family in
+  config — imprint searches that dir too.
 - **Typeset with Typst** — a single static binary; deterministic, reproducible.
 
 ## Install
@@ -206,11 +192,12 @@ imprint --list-profiles               # show the profiles you have
 
 A profile is just a config file, so it holds the same keys (`accent`, `font_*`,
 `logo`, `logo_dark_bg`, default toggles) — and because a config `logo` resolves
-next to its file, each profile keeps its assets together. Set a default profile
-for a shell with `export IMPRINT_PROFILE=acme`; a document's front matter and CLI
-flags still override the profile per render. Resolution order: `--profile` →
-`$IMPRINT_CONFIG` → `IMPRINT_PROFILE` → `~/.config/imprint/config.yaml` →
-`./config.yaml`.
+next to its file, each profile keeps its logo beside it. A profile can also name a
+custom `font_*` family; put the TTFs in `~/.config/imprint/fonts/` (searched for
+every profile). Set a default profile for a shell with `export IMPRINT_PROFILE=acme`;
+a document's front matter and CLI flags still override the profile per render.
+Resolution order: `--profile` → `$IMPRINT_CONFIG` → `IMPRINT_PROFILE` →
+`~/.config/imprint/config.yaml` → `./config.yaml`.
 
 ## Metadata: front matter or flags
 
