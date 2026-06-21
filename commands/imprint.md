@@ -40,6 +40,10 @@ apply — imprint omits unset optionals):
 - `title` — the document's first `# H1` (imprint strips it from the body).
 - `subtitle` — a short version/scope line if the doc has one.
 - `description` — one sentence from the opening/purpose.
+- `author` — who prepared it (a person or team). Shown as "Prepared by" on a
+  cover, and recorded as the PDF author. Omit if the document doesn't say.
+- `footer_text` — short name for the footer (bottom-left of every page); falls
+  back to `author` when unset. Often a product or team name.
 - `category` — the document's function area (e.g. `Engineering`, `Documentation`).
   Shown as a cover eyebrow and added to the PDF keywords. Omit if unclear.
 - `date` — only if the document states one; otherwise omit.
@@ -82,8 +86,12 @@ Print a short report and the render command:
 Then give the command to render it (imprint is on the PATH, so it runs from anywhere):
 
 ```
-imprint <path/to/source.md>             # -> <source without .md>.pdf
-imprint <path/to/source.md> --cover     # add a light title page
-imprint <path/to/source.md> --gradient  # add a gradient (accent-wash) title page
-imprint <path/to/source.md> --profile acme   # render with a specific org's house style
+imprint <path/to/source.md>                   # -> <source without .md>.pdf
+imprint <path/to/source.md> --cover           # add a light title page
+imprint <path/to/source.md> --cover --gradient  # add a gradient (accent-wash) title page
+imprint <path/to/source.md> --profile acme    # render with a specific org's house style
 ```
+
+`--gradient` only picks the cover *look*, so it needs `--cover` alongside it
+(or `cover: true` + `cover_style: gradient` in front matter) — `--gradient`
+alone renders no title page.
