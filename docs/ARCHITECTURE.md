@@ -132,7 +132,7 @@ templates/default.typ     # the one layout template
 assets/fonts/             # bundled TTFs, embedded by Typst
 config.example.yaml       # committed placeholder config
 config.yaml               # your personal config (gitignored)
-commands/imprint.md         # optional Claude Code /imprint slash command
+skills/imprint/SKILL.md     # optional Claude Code /imprint skill
 examples/sample.md        # the bundled demo document
 docs/                     # this file + decision records
 ```

@@ -30,6 +30,6 @@ config:
   # rather than headings — a deliberate, pervasive style.
   MD036: false
 
-  # Not every file is an article: slash commands (commands/*.md) carry YAML front
-  # matter and no H1, and other docs lead with an <!-- front matter --> comment.
+  # Not every file is an article: the /imprint skill (skills/imprint/SKILL.md) has
+  # YAML front matter and no H1, and other docs lead with an <!-- front matter --> comment.
   MD041: false

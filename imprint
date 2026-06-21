@@ -12,7 +12,7 @@
 #          [--logo PATH | --no-logo] [--logo-dark-bg PATH] [--logo-height PT]
 #          [--cover | --no-cover] [--cover-style light|gradient] [--gradient]
 #          [--confidential | --no-confidential] [--keep-h1]
-#          [--profile NAME | --list-profiles]
+#          [--profile NAME | --list-profiles | --conventions]
 #
 # imprint keeps two things apart. HOUSE STYLE — the theme accent, fonts, your logo,
 # and the default cover / confidential toggles — lives in a config file: a reusable
@@ -59,7 +59,7 @@ CONFIG=""
 IN=""; OUT=""
 TITLE=""; SUBTITLE=""; DESC=""; AUTHOR=""; FOOTER_TEXT_CLI=""
 RECIPIENT=""; DATE=""; CONF=""; KEEP_H1=0; COVER=""; CATEGORY=""; ACCENT=""; LOGO_CLI=""; LOGO_HEIGHT_CLI=""
-COVER_STYLE=""; LOGO_DARK_BG_CLI=""; NO_LOGO=0; PROFILE_CLI=""; LIST_PROFILES=0
+COVER_STYLE=""; LOGO_DARK_BG_CLI=""; NO_LOGO=0; PROFILE_CLI=""; LIST_PROFILES=0; SHOW_CONVENTIONS=0
 
 usage() {
   sed -n '2,28p' "$SOURCE" | sed 's/^# \{0,1\}//'
@@ -84,6 +84,7 @@ while [[ $# -gt 0 ]]; do
     --logo-height) LOGO_HEIGHT_CLI="$2"; shift 2;;
     --profile) PROFILE_CLI="$2"; shift 2;;
     --list-profiles) LIST_PROFILES=1; shift;;
+    --conventions) SHOW_CONVENTIONS=1; shift;;
     --cover) COVER=1; shift;;
     --no-cover) COVER=0; shift;;
     --cover-style) COVER_STYLE="$2"; shift 2;;
@@ -107,6 +108,16 @@ if [[ "$LIST_PROFILES" == "1" ]]; then
     echo "  $(basename "$p" .yaml)"
   done
   [[ $found == 0 ]] && echo "no profiles yet — create $PROFILES_DIR/<name>.yaml (see config.example.yaml)"
+  exit 0
+fi
+
+# --conventions: print the front-matter + authoring-conventions spec straight from
+# the README (the source of truth), so the /imprint skill can inject it and always
+# match the installed version. Reads the README beside this script (repo root).
+if [[ "$SHOW_CONVENTIONS" == "1" ]]; then
+  readme="$HERE/README.md"
+  [[ -f "$readme" ]] || { echo "imprint: README not found at $readme" >&2; exit 2; }
+  awk '/^## /{p=($0=="## Metadata: front matter or flags"||$0=="## Authoring conventions")} p' "$readme"
   exit 0
 fi
 

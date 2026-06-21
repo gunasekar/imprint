@@ -1,41 +1,33 @@
 ---
+name: imprint
 description: Prep a Markdown file with imprint front matter + authoring conventions for clean PDF rendering
 argument-hint: <path/to/source.md>
+disable-model-invocation: true
 ---
 
 Prepare the Markdown file at `$ARGUMENTS` for rendering with **imprint** — the
 deterministic Markdown → PDF tool, installed as the `imprint` command on your PATH.
 imprint reads front matter (an HTML-comment block, or a `---` fence) for cover/
-footer metadata and restyles a handful of native Markdown constructs; this
-command edits the file in place to add those.
+footer metadata and restyles a handful of native Markdown constructs; this skill
+edits the file in place to add those.
 
-## Step 1: Read imprint's conventions (source of truth)
+## imprint's conventions (the spec — injected from the installed version)
 
-Locate imprint's repo from the installed binary, then read its `README.md` — don't
-hardcode a path or work from memory:
+The block below is the output of `imprint --conventions`: the exact front-matter
+keys (with defaults) and authoring conventions, taken straight from the installed
+imprint's README, so it always matches the version on this machine. Treat it as the
+source of truth for Steps 1–2.
 
-```bash
-imprint_dir=$(dirname "$(readlink "$(command -v imprint)")")   # repo root, from the PATH symlink
-echo "$imprint_dir/README.md"
-```
+!`imprint --conventions 2>/dev/null || echo "(imprint not on PATH — run 'make install' in the imprint repo, then retry)"`
 
-Read `$imprint_dir/README.md`. Two sections are the spec:
-
-- **"Metadata: front matter or flags"** — the exact front-matter keys imprint
-  accepts and their defaults.
-- **"Authoring conventions"** — the native-Markdown constructs imprint restyles
-  (callouts, mermaid captions, page breaks, table column widths).
-
-(If `command -v imprint` finds nothing, imprint isn't installed — run `make install`
-in the imprint repo, then retry.)
-
-## Step 2: Add front matter
+## Step 1: Add front matter
 
 Insert the metadata block at the very top of the file as an **HTML comment**
 (`<!-- … -->`, on its own lines) — imprint reads it, but every Markdown viewer
 hides it, unlike a `---` fence which GitHub and VS Code render. Infer each value
-from the document and **state every inferred value**. Keys (omit any that don't
-apply — imprint omits unset optionals):
+from the document and **state every inferred value**. Use the keys from the
+injected spec above (omit any that don't apply — imprint omits unset optionals);
+the guidance for the common ones:
 
 - `title` — the document's first `# H1` (imprint strips it from the body).
 - `subtitle` — a short version/scope line if the doc has one.
@@ -58,7 +50,7 @@ with the user** before finalizing; infer the rest. House style (the accent, font
 and logo) comes from the user's config — do **not** add it to front matter unless
 this one document needs to differ.
 
-## Step 3: Apply authoring conventions
+## Step 2: Apply authoring conventions
 
 Add imprint constructs only — **do not rewrite the prose**:
 
@@ -72,7 +64,7 @@ Add imprint constructs only — **do not rewrite the prose**:
   in the separator row sets how that width is split. Adjust dashes only where the
   default split short-changes a column; leave balanced tables alone.
 
-## Step 4: Report and hand off
+## Step 3: Report and hand off
 
 Print a short report and the render command:
 

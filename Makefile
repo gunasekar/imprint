@@ -1,10 +1,10 @@
 PREFIX ?= /usr/local
 BINDIR := $(PREFIX)/bin
 
-# Where Claude Code looks for user slash commands (override with CMDDIR=...).
-CMDDIR ?= $(HOME)/.claude/commands
+# Where Claude Code looks for user skills (override with SKILLDIR=...).
+SKILLDIR ?= $(HOME)/.claude/skills
 
-.PHONY: install uninstall command uninstall-command check lint-md example config profile preview
+.PHONY: install uninstall skill uninstall-skill check lint-md example config profile preview
 
 ## Symlink imprint onto your PATH (override with PREFIX=~/.local)
 install:
@@ -41,16 +41,17 @@ profile:
 	  echo "put $(NAME)'s logo beside it, then: imprint doc.md --profile $(NAME)"; \
 	fi
 
-## Install the /imprint Claude Code slash command (symlink; override with CMDDIR=...)
-command:
-	@mkdir -p "$(CMDDIR)"
-	@ln -sfn "$(CURDIR)/commands/imprint.md" "$(CMDDIR)/imprint.md"
-	@echo "linked $(CMDDIR)/imprint.md -> $(CURDIR)/commands/imprint.md"
+## Install the /imprint Claude Code skill from this clone (symlink; override with
+## SKILLDIR=...). The curl installer links it automatically when Claude Code is present.
+skill:
+	@mkdir -p "$(SKILLDIR)"
+	@ln -sfn "$(CURDIR)/skills/imprint" "$(SKILLDIR)/imprint"
+	@echo "linked $(SKILLDIR)/imprint -> $(CURDIR)/skills/imprint"
 	@echo "open Claude Code and type /imprint <path/to/source.md>"
 
-uninstall-command:
-	@rm -f "$(CMDDIR)/imprint.md"
-	@echo "removed $(CMDDIR)/imprint.md"
+uninstall-skill:
+	@rm -f "$(SKILLDIR)/imprint"
+	@echo "removed $(SKILLDIR)/imprint"
 
 ## Lint the Markdown docs (rules + globs in .markdownlint-cli2.yaml; needs node/npx)
 lint-md:

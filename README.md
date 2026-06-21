@@ -83,9 +83,11 @@ curl -fsSL https://raw.githubusercontent.com/gunasekar/imprint/main/install.sh |
 Works on macOS and Linux. It clones imprint into `~/.local/share/imprint`, symlinks
 the `imprint` command into `~/.local/bin`, scaffolds `~/.config/imprint/config.yaml`,
 and checks your prerequisites (with OS-specific install hints for anything
-missing). Re-run it anytime to update. Override locations with `IMPRINT_HOME` /
-`IMPRINT_BIN`. It does **not** install the external tools below — install those
-once with your package manager.
+missing). If Claude Code is detected (`~/.claude` exists), it also links the
+optional [`/imprint`](skills/imprint/SKILL.md) skill (skip with
+`IMPRINT_NO_CLAUDE_SKILL=1`). Re-run it anytime to update. Override locations with
+`IMPRINT_HOME` / `IMPRINT_BIN`. It does **not** install the external tools below —
+install those once with your package manager.
 
 ### Prerequisites
 

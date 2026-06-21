@@ -5,10 +5,13 @@
 #
 # imprint is a script plus a Typst template and bundled fonts, so this clones the
 # whole repo into a share dir and symlinks `imprint` into a bin dir. Re-running
-# updates an existing install. Override locations with env vars:
+# updates an existing install. If Claude Code is detected, it also links the
+# optional /imprint skill. Override locations with env vars:
 #   IMPRINT_HOME  (default ~/.local/share/imprint)   where the repo lives
 #   IMPRINT_BIN   (default ~/.local/bin)            where the symlink goes
 #   IMPRINT_REPO / IMPRINT_BRANCH                     source to fetch from
+#   IMPRINT_SKILLDIR (default ~/.claude/skills)      Claude Code skills dir
+#   IMPRINT_NO_CLAUDE_SKILL=1                          skip the /imprint skill
 set -eu
 
 REPO="${IMPRINT_REPO:-https://github.com/gunasekar/imprint}"
@@ -60,7 +63,19 @@ if [ ! -f "$CFG" ]; then
   say "created $CFG — edit it with your name and accent color"
 fi
 
-# --- 4. prerequisite check ---
+# --- 4. Claude Code /imprint skill (only if Claude Code is present) ---
+# imprint ships an optional Claude Code skill (skills/imprint/). Link it only when
+# Claude Code is detected (~/.claude exists) so non-users don't get a stray skills
+# dir; an explicit IMPRINT_SKILLDIR forces it on. The symlink points at the cloned
+# directory, so it tracks updates. Skip with IMPRINT_NO_CLAUDE_SKILL=1.
+SKILLDIR="${IMPRINT_SKILLDIR:-$HOME/.claude/skills}"
+if [ -z "${IMPRINT_NO_CLAUDE_SKILL:-}" ] && { [ -n "${IMPRINT_SKILLDIR:-}" ] || [ -d "$HOME/.claude" ]; }; then
+  mkdir -p "$SKILLDIR"
+  ln -sfn "$HOME_DIR/skills/imprint" "$SKILLDIR/imprint"
+  say "linked $SKILLDIR/imprint -> $HOME_DIR/skills/imprint  (Claude Code /imprint)"
+fi
+
+# --- 5. prerequisite check ---
 say ""
 say "checking prerequisites:"
 miss=0
@@ -88,7 +103,7 @@ if [ "$miss" = 1 ]; then
   esac
 fi
 
-# --- 5. PATH guidance ---
+# --- 6. PATH guidance ---
 case ":$PATH:" in
   *":$BINDIR:"*) : ;;
   *)
