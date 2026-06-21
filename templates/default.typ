@@ -235,14 +235,19 @@ $endif$
   // footer text (left) and the page number (right).
   set page(
     numbering: "1",
-    header: {
-      set text(size: head-size, fill: muted)
-      grid(columns: (1fr, auto), align: bottom,
-        align(left + bottom)[#if logo-path != none { image(logo-path, height: head-size * 2, alt: "logo") }],
-        align(right + bottom)[#if title != none { title }],
-      )
-      v(2pt)
-      line(length: 100%, stroke: 0.5pt + hairline)
+    header: context {
+      // With a masthead (no cover), the first body page carries the title block,
+      // so the running header only begins on the second page. With a cover, every
+      // body page gets the header.
+      if cover or counter(page).get().first() > 1 {
+        set text(size: head-size, fill: muted)
+        grid(columns: (1fr, auto), align: bottom,
+          align(left + bottom)[#if logo-path != none { image(logo-path, height: head-size * 2, alt: "logo") }],
+          align(right + bottom)[#if title != none { title }],
+        )
+        v(2pt)
+        line(length: 100%, stroke: 0.5pt + hairline)
+      }
     },
     footer: {
       set text(size: 8.5pt, fill: muted)
@@ -255,6 +260,20 @@ $endif$
     },
   )
   counter(page).update(1)
+  // Masthead: with no cover page, open the first body page with a title block —
+  // title, subtitle, description — so the document still has a proper title
+  // treatment (not just the small running header). Mirrors the light cover's
+  // hierarchy: dark title, accent subtitle, muted description, over a thin rule.
+  if not cover and title != none {
+    block(below: 1.7em, {
+      set par(justify: false, leading: 0.5em)
+      text(font: head-font, size: 24pt, fill: heading-ink, weight: 700)[#title]
+      if subtitle != none { v(0.45em); text(size: 14pt, fill: accent-dark, weight: 600)[#subtitle] }
+      if description != none { v(0.6em); block(width: 88%, text(size: 10.5pt, fill: muted)[#description]) }
+      v(0.85em)
+      line(length: 100%, stroke: 0.5pt + hairline)
+    })
+  }
   doc
 }
 

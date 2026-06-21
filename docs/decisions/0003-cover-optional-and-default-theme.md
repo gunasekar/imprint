@@ -44,3 +44,12 @@ to follow proof, which colors every heading in its brand. This keeps imprint's
 look consistent with the parent tool and lets the one accent token drive headings
 along with links, dividers, table heads, and callouts. Body text stays graphite;
 table-head text and the light-cover title keep `heading-ink`.
+
+The cover-off case originally dove straight into content, with the title only in
+the small running header. It now opens the first page with a **masthead** — the
+title, subtitle, and description as a title block over a thin rule — so a
+cover-less document still leads with a proper title. To avoid showing the title
+twice on the first page, the running header is suppressed there and begins on
+page 2 (the cover-on case is unchanged: every body page keeps its header). The
+masthead always renders for cover-off documents, since a resolved title always
+exists (front matter or the first `# H1`).

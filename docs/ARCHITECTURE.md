@@ -84,7 +84,9 @@ the rest is plain Typst. Structure:
   header/footer. The body is passed in as `doc`. The cover has two styles sharing
   one `coverBody` closure: the default light page and an opt-in gradient wash
   (`cover_style: gradient`) — a dark slate anchor flowing into `accent`, echoing
-  proof — see [ADR 0004](decisions/0004-optional-gradient-cover.md).
+  proof — see [ADR 0004](decisions/0004-optional-gradient-cover.md). With no
+  cover, the first body page opens with a **masthead** (title, subtitle,
+  description) and the running header begins on page 2.
 - **`#show: doc => conf(...)`** wires the pandoc-filled metadata into `conf` and
   renders `$body$`.
 

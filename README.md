@@ -49,6 +49,16 @@ light `logo_white` (and otherwise shows no cover logo).
 |:---------------------:|:-----------------------------:|
 | <img src="docs/images/sample-full-1.png" width="300" alt="Light cover"> | <img src="docs/images/sample-gradient-1.png" width="300" alt="Gradient accent-wash cover"> |
 
+The cover itself is **off by default**. Without one, imprint opens the first page
+with a **masthead** — the title, subtitle, and description as a title block over a
+thin rule, with the content flowing straight after — and the running header picks
+up from page 2. So a cover-less document still leads with a proper title, not just
+the small header.
+
+| Without cover — masthead (default) | With cover — title page |
+|:----------------------------------:|:-----------------------:|
+| <img src="docs/images/sample-nocover-1.png" width="300" alt="No cover: title/subtitle/description masthead on the first page"> | <img src="docs/images/sample-minimal-1.png" width="300" alt="Cover title page"> |
+
 Regenerate these with `make preview` after a theme change.
 
 ## What you get
@@ -56,7 +66,8 @@ Regenerate these with `make preview` after a theme change.
 - **Clean body pages by default** — a Titled running header (an optional logo on
   the left, the document title on the right, over a thin rule) and a footer
   (optional footer text on the left, page number right). No cover unless you ask
-  for one.
+  for one — instead the first page opens with a **masthead** (title, subtitle,
+  description), and the running header begins on page 2.
 - **Optional title page** — pass `--cover` (or `cover: true`) for a calm, light
   cover: title, subtitle, description, a `Prepared for / Prepared by` band, and
   an optional category eyebrow. Prefer something bolder? `--gradient` (or
