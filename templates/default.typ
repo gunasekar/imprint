@@ -1,4 +1,4 @@
-// imprint pandoc->Typst template — graphite + teal, config-driven.
+// imprint pandoc->Typst template — graphite + blue, config-driven.
 // Identity (accent, fonts, logo, author/footer text) is injected from config.yaml
 // / front matter / CLI via pandoc -V variables; nothing brand-specific is hardcoded.
 // The body rendering preamble below is required by pandoc's Typst writer.
@@ -43,16 +43,24 @@
 // against it); the accent drives the rest, so the wash still re-tints with the
 // theme.
 #let cover-slate = rgb("#0F172A")   // slate-900 — the dark gradient anchor (proof's cover-top)
+// Mid stop, derived dark. proof pins a deep teal (#115E59) at 60%; a generic
+// accent.darken(38%) lands on the same lightness, so the upper-middle of the wash
+// stays dark and the slate anchor reads — instead of lifting straight into a flat
+// bright accent. Tuned against proof's LattIQ-green cover; re-tints with any accent.
 #let cover-grad = gradient.linear(angle: 45deg,
-  (cover-slate, 0%), (accent.darken(22%), 60%), (accent, 100%))
-#let cover-glow = accent.lighten(30%)
+  (cover-slate, 0%), (accent.darken(38%), 60%), (accent, 100%))
+// Two soft radial glows over the wash: a brighter halo top-right (behind the logo)
+// and a subtler, deeper one bottom-left — echoing proof's two-tone emeralds
+// (#34D399 / #10B981), but derived from accent so the cover still re-tints.
+#let cover-glow-tr = accent.lighten(34%)
+#let cover-glow-bl = accent.lighten(18%)
 #let cover-glows = {
   place(top + left, rect(width: 100%, height: 100%, fill: gradient.radial(
-    (cover-glow.transparentize(68%), 0%), (cover-glow.transparentize(100%), 70%),
-    (cover-glow.transparentize(100%), 100%), center: (85%, 18%), radius: 75%)))
+    (cover-glow-tr.transparentize(66%), 0%), (cover-glow-tr.transparentize(100%), 70%),
+    (cover-glow-tr.transparentize(100%), 100%), center: (85%, 18%), radius: 75%)))
   place(top + left, rect(width: 100%, height: 100%, fill: gradient.radial(
-    (cover-glow.transparentize(80%), 0%), (cover-glow.transparentize(100%), 70%),
-    (cover-glow.transparentize(100%), 100%), center: (12%, 82%), radius: 75%)))
+    (cover-glow-bl.transparentize(80%), 0%), (cover-glow-bl.transparentize(100%), 70%),
+    (cover-glow-bl.transparentize(100%), 100%), center: (12%, 82%), radius: 75%)))
 }
 
 // Sleek section divider for `---`: a short, centred accent rule with round caps.

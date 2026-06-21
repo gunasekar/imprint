@@ -75,3 +75,24 @@ in your head. Two independent toggles (on/off, and which look) are easier to rea
 about than one with a hidden coupling. The cost is that a gradient cover now takes
 two settings (`cover: true` + `cover_style: gradient`, or `--cover --gradient`), and
 `--gradient` alone is a no-op — an acceptable trade for a predictable model.
+
+## Update — 2026-06-22 (gradient calibration)
+
+Decision 2's derivation was re-tuned to land closer to proof's hand-tuned cover
+when `accent` is the LattIQ green. Comparing the two side by side, imprint's wash
+read flatter and brighter: the original mid stop `accent.darken(22%)` sat well
+above proof's fixed deep teal (`#115E59`) at the 60% stop, so the upper half
+lifted into a near-uniform bright accent instead of holding the dark teal proof
+keeps there. The single `accent.lighten(30%)` glow also missed proof's *two*
+distinct emeralds (`#34D399` top-right, `#10B981` bottom-left).
+
+The stops are unchanged in structure (still slate anchor → mid → accent, two
+radial glows) and still **fully derived from `accent`** — only the factors moved:
+
+- mid stop: `accent.darken(22%)` → `accent.darken(38%)` (matches proof's deep-teal
+  lightness, keeping the top dark);
+- glows: one `accent.lighten(30%)` → a two-tone pair, `accent.lighten(34%)`
+  top-right (brighter halo behind the logo) and `accent.lighten(18%)` bottom-left.
+
+This is a calibration of the factors, not a change to the model: the slate anchor
+stays the one fixed color, and any other `accent` still re-tints the whole wash.

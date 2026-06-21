@@ -104,7 +104,8 @@ the rest is plain Typst. Structure:
 | `accent-dark` | `accent.darken(22%)` | links, eyebrow labels, bold lead-ins |
 | `accent-soft` | `accent.lighten(90%)` | callout / table-head fill |
 | `accent-bright` | `accent.lighten(28%)` | lifted-accent highlights (subtitle, labels) on the gradient cover |
-| `cover-grad` | `#0F172A` (slate) → `accent` | gradient cover wash (opt-in); slate anchor keeps it dark so accent highlights read |
+| `cover-grad` | `#0F172A` slate → `accent.darken(38%)` → `accent` | gradient cover wash (opt-in); the slate anchor plus a dark derived mid keep the top dark so the bright accent reads at the lower-right |
+| `cover-glow-tr` / `cover-glow-bl` | `accent.lighten(34%)` / `lighten(18%)` | two-tone radial glows over the wash (brighter top-right, deeper bottom-left), echoing proof's emeralds |
 | `heading-ink` | `#111827` | table-head text, light-cover title |
 | `ink` | `#1F2937` | body text |
 | `muted` | `#6B7280` | captions, footer, labels |
