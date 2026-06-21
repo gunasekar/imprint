@@ -1,107 +1,160 @@
 <!--
-# Front matter = this document's own metadata. It lives in an HTML comment, so it
-# stays invisible in any Markdown viewer (GitHub, VS Code) while imprint reads it.
-#
-# Precedence, highest wins:  CLI flag  >  front matter  >  config.yaml  >  default.
-# config.yaml carries your house style (accent, fonts, default toggles) for every
-# PDF you render; set a key here only when THIS document should differ.
-
-# --- Commonly used: fill these in per document ---
-title:        "imprint — A Field Guide"
-subtitle:     "Markdown in, the same PDF out"
-description:  "A short tour of everything imprint renders: headings, callouts, tables, code, diagrams, and page breaks — using nothing but plain Markdown plus a few invisible conventions."
-author:       "Jane Doe"
+# Front matter — this document's own metadata. See the README section
+# "Metadata: front matter or flags" for every key, and config.yaml for house
+# style (accent, fonts, logo). This sample doubles as a render test: a believable
+# design doc that exercises a gradient cover, two diagram types, tables, callouts,
+# and a page break — nothing here is imprint-specific.
+title:        "Switchboard — Webhook Delivery Service"
+subtitle:     "v2 — At-least-once delivery with retries"
+description:  "How Switchboard accepts internal events and delivers them as signed webhooks to subscriber endpoints — with retries, exponential backoff, and a dead-letter queue."
+author:       "Platform Team"
 date:         "June 2026"
-footer_text:  "imprint — field guide"
-cover:        true                 # title page; OFF by default — omit to start straight into content
-
-# --- Optional: uncomment only if a document needs it ---
-# recipient:    "Acme Corp"        # adds a "Prepared for" line on the cover
-# category:     "Documentation"    # cover eyebrow + PDF keyword
-# confidential: true               # stamps a "Confidential" marker on every page
-# cover_style:  gradient           # swap the calm light cover for an accent wash (implies cover: true)
-
-# --- House style: normally set once in config.yaml; override here only for a one-off look ---
-# accent:       "#2563EB"          # the single theme color (headings, links, rules, table headers)
-# font_body:    "Source Sans 3"    # body + headings
-# font_head:    "IBM Plex Sans"    # headings only (defaults to font_body)
-# font_mono:    "JetBrains Mono"   # code
-# logo:         "logo.svg"             # brand mark (cover + running header). Set once in config; here it's
-#                                      # relative to this .md. Use `logo: none` to drop a config logo for this doc.
-# logo_dark_bg: "logo-dark-bg.svg"     # logo for a dark background; used only on the gradient cover
-# logo_height:  40                     # cover logo height, in pt
+category:     "Engineering"
+cover_style:  gradient
 -->
-# imprint — A Field Guide
+# Switchboard — Webhook Delivery Service
 
-imprint turns a plain Markdown file into a clean, typeset PDF — deterministically.
-It runs a fixed pipeline — pandoc parses the Markdown, a Typst template typesets
-it — so the same input always produces the same output. This page is itself
-rendered by imprint, so what you see is exactly what you get.
+> **Purpose.** Switchboard is the service that turns internal domain events into
+> outbound **webhooks**: other teams publish an event once, and Switchboard
+> delivers it as a signed HTTP request to every endpoint subscribed to that event
+> type. This document covers the **v2** design — how an event travels from publish
+> to delivery, how failures are retried, and how a subscriber proves a request is
+> genuine.
 
-> **Note.** The cover page is **off by default**; this file turns it on with
-> `cover: true` to show the title page. The optional keys in the front matter
-> above — `recipient`, `category`, `confidential`, `logo`, and the accent/font
-> house style — are left commented out. Uncomment any of them to see what they
-> add, or set the house-style ones once in `config.yaml` to apply everywhere.
+**Scope:** v2 only — the queue-backed delivery workers. The legacy v1 (synchronous, in-request) delivery path is out of scope.
 
-## Authoring conventions
+---
 
-Everything below is standard Markdown. imprint restyles a handful of native
-constructs without changing the source:
+## 1. At a glance
 
-- **Callouts** — any block quote becomes a tinted note box. Lead with a bold
-  `**Label.**` to get a colored label.
-- **Page breaks** — an HTML comment, `<!-- pagebreak -->`, on its own line.
-- **Diagram captions** — a `%% caption: …` line inside a Mermaid block.
-- **Table widths** — the ratio of dashes in the separator row sets the column split.
-- **Logo** — set `logo:` in front matter (or pass `--logo`) to place a mark in
-  the running header and on the cover. It's commented out here, so this guide
-  shows the default title-only header.
+A publisher hands Switchboard an event and is done. Everything after that — fan-out
+to subscribers, retries, signing — is Switchboard's responsibility, and none of it
+blocks the publisher.
 
-## Tables
+| Component | Runs on | Responsibility |
+|----------|--------------|---------------------------------------------|
+| **Ingest API** | API Gateway + Lambda | Authenticate the publisher, validate the envelope, and durably enqueue the event |
+| **Events queue** | Managed queue | Decouple publish from delivery so a slow subscriber can never back-pressure a publisher |
+| **Subscription Registry** | Postgres | Which endpoints want which event types, plus each endpoint's signing secret |
+| **Delivery workers** | ECS Fargate | Sign and POST each event, interpret the response, and schedule retries on failure |
+| **Dead-letter queue** | Managed queue | Events that exhausted their retry budget, kept for inspection and manual replay |
 
-The dash ratios below widen the description column:
+Publishers hold exactly one contract: the publish endpoint and an event-type name.
+Who consumes an event — and how many subscribers there are — can change without any
+publisher ever knowing.
 
-| Setting | Where | What it does |
-|--------|--------|-------------------------------------------------|
-| `accent` | config | The single theme color used for links, rules, and headers |
-| `cover` | config / front matter | Whether the title page renders; off by default |
-| `footer_text` | front matter / CLI | Free text shown bottom-left on every page |
-
-## Code
-
-Inline code like `imprint report.md` renders as a chip. Blocks get a framed box:
-
-```bash
-imprint report.md                 # -> report.pdf
-imprint report.md --cover         # add a title page
-imprint report.md --accent "#2563EB"   # override the theme color for one run
-```
+> **What a publisher sees:** a single call and a `202 Accepted` once the event is
+> durably enqueued. Delivery happens asynchronously, so adding a subscriber or a
+> slow endpoint never changes how fast `publish` returns.
 
 <!-- pagebreak -->
 
-## Diagrams
+## 2. Architecture — where an event lives
 
-Fenced ` ```mermaid ` blocks are rendered to crisp vector SVG and framed as a
-captioned figure:
+Almost everything is a queue and the workers that drain it. The Subscription
+Registry is the one piece of shared state every delivery reads.
 
 ```mermaid
-%% caption: The imprint pipeline — Markdown is preprocessed, typeset by Typst, and emitted as a PDF.
+%% caption: Switchboard — services publish once, delivery workers sign and POST to each subscriber, and failures flow through a retry queue to the dead-letter queue.
 flowchart LR
-    MD["Markdown (.md)"]
-    PRE["Preprocess — front matter, mermaid, images"]
-    TYP["Typst — typeset against the template"]
-    PDF["PDF (.pdf)"]
-    MD --> PRE --> TYP --> PDF
+    SVC["Internal services"]
+    API["Ingest API"]
+    Q[("events queue")]
+    REG[("Subscription Registry")]
+    WRK["Delivery workers"]
+    SUB["Subscriber endpoints"]
+    RETRY[("retry queue")]
+    DLQ[("dead-letter queue")]
+
+    SVC -->|"publish"| API --> Q --> WRK
+    WRK -. "endpoints & secrets" .-> REG
+    WRK -->|"signed POST"| SUB
+    WRK -->|"on failure"| RETRY --> WRK
+    WRK -->|"budget exhausted"| DLQ
 ```
 
-## Why deterministic
+The workers are stateless beyond their queue position, so they scale horizontally
+just by adding Fargate tasks — delivery throughput is a function of worker count,
+not of any single subscriber's speed.
 
-Because the render path is a fixed, offline pipeline, the output depends only on
-the input and the bundled fonts. Check the Markdown into version control and any
-machine reproduces the same bytes — useful for specs, runbooks, and anything you
-want to trust over time.
+## 3. Delivering one event — end-to-end
 
-> **Tip.** Keep the source `.md` pure Markdown so it also reads well on GitHub.
-> All of imprint's conventions are either invisible (HTML comments) or already
-> valid Markdown (block quotes, fenced diagrams).
+One event, one delivery attempt per subscriber. The Ingest API acknowledges as soon
+as the event is durable; everything else is the worker's job, and a failing
+subscriber only ever affects its own deliveries.
+
+```mermaid
+%% caption: One event from publish to delivery — a 2xx marks it delivered, anything else schedules a backoff retry, and an exhausted budget routes it to the dead-letter queue.
+sequenceDiagram
+    actor S as Service
+    participant API as Ingest API
+    participant Q as events queue
+    participant W as Delivery worker
+    participant R as Registry
+    participant E as Subscriber
+
+    S->>API: publish event
+    API->>Q: enqueue
+    Q-->>API: durable ack
+    API-->>S: 202 Accepted
+
+    Q->>W: deliver
+    W->>R: subscriptions for type
+    R-->>W: endpoints + secret
+    W->>E: POST payload + signature
+    alt 2xx response
+        E-->>W: 200 OK
+        W->>W: mark delivered
+    else error or timeout
+        E-->>W: 5xx / timeout
+        W->>W: schedule retry (backoff)
+    end
+```
+
+Each subscriber is delivered independently: one endpoint returning `500` never holds
+up delivery to the others, and never affects the publisher.
+
+<!-- pagebreak -->
+
+## 4. Retries and backoff
+
+A failed delivery is retried on a widening schedule. After the last attempt the
+event moves to the dead-letter queue — it is never dropped silently.
+
+| Attempt | Wait before it | Typical cause it absorbs |
+|--------|--------------|-------------------------------------------------|
+| 1 | immediate | a single dropped connection |
+| 2 | 30 seconds | a brief subscriber restart |
+| 3 | 2 minutes | a short deploy or rollout |
+| 4 | 10 minutes | a transient dependency outage |
+| 5 | 1 hour | a longer incident on the subscriber's side |
+| — | dead-letter | the subscriber has been down for hours |
+
+> **Note.** Retries are per subscriber, not per event. If three of four endpoints
+> accept an event immediately, only the fourth is retried — the others are already
+> marked delivered and are never re-sent.
+
+Because a worker commits its queue position only after recording the delivery
+outcome, a worker that crashes mid-batch resumes without re-sending anything it had
+already confirmed — at-least-once delivery, with the subscriber expected to
+de-duplicate on the event ID.
+
+## 5. Operational notes
+
+A few things worth knowing before you publish to or subscribe to Switchboard.
+
+### 5.1 Adding a subscription
+
+A subscription is a row in the Registry: an endpoint URL, the event types it wants,
+and a freshly generated signing secret. Workers pick it up on their next registry
+refresh, so onboarding a subscriber needs no deploy and no publisher-side change.
+
+### 5.2 Verifying a request
+
+Every request carries an `X-Switchboard-Signature` header — an HMAC of the raw body
+keyed with the subscription's secret. A subscriber recomputes the HMAC and compares;
+a mismatch means the request did not come from Switchboard.
+
+> **Before you trust a payload:** verify the signature against the **raw** body,
+> before any JSON parsing or re-serialization. Parsing and re-encoding can change a
+> byte — a re-encoded body will fail the check even when the request is genuine.
