@@ -42,13 +42,12 @@ carries a light/dark logo pair. imprint has no brand: it has one configurable
    would vanish on the wash. The gradient cover uses `logo_dark_bg` (a logo for a
    dark background — named after proof's `lockup-dark-bg`) when set and otherwise
    shows no cover logo; body-page running headers always use the normal `logo`.
-4. **Selecting gradient implies the cover is on.** A gradient is meaningless
-   without a cover, so the `--gradient` shorthand turns the cover on, and a
-   per-document `cover_style: gradient` (front matter) does too — overriding a
-   config default of `cover: false`. This implication lives in the python
-   preprocessor, the one place that can tell a per-document setting from a config
-   default. A document can still set `cover: false` to opt out, and the verbose
-   `--cover-style gradient` only sets the look (pair it with `--cover`).
+4. **`cover` and `cover_style` are orthogonal.** `cover` decides whether a title
+   page renders; `cover_style` only picks its look when one does. The style never
+   creates a cover, so a gradient cover needs both `cover: true` / `--cover` and
+   `cover_style: gradient` / `--gradient` / `--cover-style gradient`. (See the
+   2026-06-22 update below — this reverses an earlier "gradient implies a cover"
+   rule.)
 
 ## Consequences
 
@@ -60,6 +59,19 @@ carries a light/dark logo pair. imprint has no brand: it has one configurable
 - `logo_dark_bg` adds a little surface, but it is the honest fix for contrast on a
   dark cover; without it the gradient cover simply omits the logo rather than
   rendering an invisible one.
-- The cover-on implication is intentionally asymmetric (per-document settings
-  trigger it, config defaults do not). This keeps `cover_style: gradient` as a
-  house-style default from silently forcing covers onto every document.
+
+## Update — 2026-06-22
+
+Decision 4 originally had `cover_style: gradient` (in front matter) and `--gradient`
+**imply** the cover is on. This was reversed: `cover` and `cover_style` are now
+strictly orthogonal — the style only picks the look of a cover that `cover` turns
+on, and never creates one.
+
+The implication was convenient but surprised people: a sample (or any doc) that set
+only `cover_style: gradient` rendered a cover with no `cover: true` in sight, and
+the asymmetry — front-matter `cover_style` implied a cover but a config one did not,
+`--gradient` implied a cover but `--cover-style gradient` did not — was hard to hold
+in your head. Two independent toggles (on/off, and which look) are easier to reason
+about than one with a hidden coupling. The cost is that a gradient cover now takes
+two settings (`cover: true` + `cover_style: gradient`, or `--cover --gradient`), and
+`--gradient` alone is a no-op — an acceptable trade for a predictable model.

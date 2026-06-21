@@ -4,13 +4,16 @@
 # style (accent, fonts, logo). This sample doubles as a render test: a believable
 # design doc that exercises a gradient cover, two diagram types, tables, callouts,
 # and a page break — nothing here is imprint-specific.
-title:        "Switchboard — Webhook Delivery Service"
-subtitle:     "v2 — At-least-once delivery with retries"
-description:  "How Switchboard accepts internal events and delivers them as signed webhooks to subscriber endpoints — with retries, exponential backoff, and a dead-letter queue."
-author:       "Platform Team"
-date:         "June 2026"
-category:     "Engineering"
-cover_style:  gradient
+title:          "Switchboard — Webhook Delivery Service"
+subtitle:       "v2 — At-least-once delivery with retries"
+description:    "How Switchboard accepts internal events and delivers them as signed webhooks to subscriber endpoints — with retries, exponential backoff, and a dead-letter queue."
+author:         "Platform Team"
+footer_text:    "Switchboard"
+date:           "June 2026"
+category:       "Engineering"
+cover:          true
+cover_style:    gradient
+confidential:   true
 -->
 # Switchboard — Webhook Delivery Service
 

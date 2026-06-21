@@ -55,9 +55,9 @@ theme change.
   description), and the running header begins on page 2.
 - **Optional title page** — pass `--cover` (or `cover: true`) for a calm, light
   cover: title, subtitle, description, a `Prepared for / Prepared by` band, and
-  an optional category eyebrow. Prefer something bolder? `--gradient` (or
-  `cover_style: gradient`) swaps it for a dark accent wash with lifted-accent
-  highlights.
+  an optional category eyebrow. Prefer something bolder? Add `--gradient` (or
+  `cover_style: gradient`) alongside it to swap that cover for a dark accent wash
+  with lifted-accent highlights — the style picks the look, `--cover` turns it on.
 - **Graphite + blue theme** — graphite body text, a single configurable accent (a
   professional technical blue by default) on headings, links, section dividers,
   table headers, and callouts. Change one value in config to re-tint the whole
@@ -243,7 +243,7 @@ per document.
 | `logo_height` / `--logo-height` | `40` (config) | Cover logo height in pt (the running-header logo is always 2× the title text) |
 | `accent` / `--accent` | `#2563EB` (config) | Theme color (any hex) |
 | `cover` / `--cover` `--no-cover` | `false` (config) | Render the title page |
-| `cover_style` / `--cover-style` `--gradient` | `light` (config) | Cover look: `light` or `gradient` (an accent wash). `--gradient` also turns the cover on |
+| `cover_style` / `--cover-style` `--gradient` | `light` (config) | Cover look: `light` or `gradient` (an accent wash). Only sets the look — pair it with `cover: true` / `--cover` |
 | `confidential` / `--confidential` | `false` (config) | Adds a "Confidential" marker |
 
 ## Authoring conventions

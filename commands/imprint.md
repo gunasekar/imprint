@@ -45,8 +45,8 @@ apply — imprint omits unset optionals):
 - `date` — only if the document states one; otherwise omit.
 - `recipient` — who the doc is "Prepared for" (only meaningful with a cover).
 - `cover` — `true` only if the user wants a title page; defaults to `false`.
-- `cover_style` — `gradient` only if the user wants the bolder accent-wash cover
-  (it implies a cover); otherwise omit for the default light cover.
+- `cover_style` — `gradient` for the bolder accent-wash cover (also set `cover: true`;
+  the style only picks the look); otherwise omit for the default light cover.
 - `confidential` — `true` for sensitive documents; `false` otherwise.
 
 `cover` and `confidential` change the document's framing, so **confirm those two

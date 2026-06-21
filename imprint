@@ -87,7 +87,7 @@ while [[ $# -gt 0 ]]; do
     --cover) COVER=1; shift;;
     --no-cover) COVER=0; shift;;
     --cover-style) COVER_STYLE="$2"; shift 2;;
-    --gradient) COVER_STYLE=gradient; COVER=1; shift;;   # gradient cover, on
+    --gradient) COVER_STYLE=gradient; shift;;            # gradient look (pair with --cover)
     --no-gradient) COVER_STYLE=light; shift;;
     --confidential) CONF=1; shift;;
     --no-confidential) CONF=0; shift;;
@@ -209,11 +209,10 @@ merged = {k: cfg[k] for k in PDF_CONFIG_KEYS if cfg.get(k) not in (None, "")}
 merged.update(fm)
 if not merged.get("title") and h1:
     merged["title"] = h1
-# A gradient is a cover style, so a per-document `cover_style: gradient` (with no
-# explicit per-document `cover`) implies the cover is on — overriding any config
-# default of `cover: false`. A document can still set `cover: false` to opt out.
-if fm.get("cover_style") == "gradient" and "cover" not in fm:
-    merged["cover"] = "true"
+# `cover` and `cover_style` are orthogonal: `cover` decides whether a title page
+# renders, `cover_style` only picks its look (light / gradient) when it does. So a
+# gradient cover needs both `cover: true` (or --cover) and `cover_style: gradient`
+# (or --gradient/--cover-style gradient) — the style alone never creates a cover.
 
 # Logo assets are house style with a per-document override, so they resolve by
 # origin: a front-matter `logo` is relative to the .md; a config `logo` is
@@ -353,10 +352,9 @@ truthy() { case "$1" in true|True|TRUE|1|yes|Yes|on) return 0;; *) return 1;; es
 if [[ -z "$CONF"  ]]; then truthy "$FM_confidential" && CONF=1 || CONF=0; fi
 
 # Cover style: CLI flag > front matter / config; default "light". Only "gradient"
-# is special — anything else is the light cover. (The `--gradient` shorthand also
-# turns the cover on; a per-document `cover_style: gradient` implies it too — see
-# the python preprocessor. The verbose `--cover-style gradient` only sets the
-# look, so pair it with `--cover` or a front-matter `cover: true`.)
+# is special — anything else is the light cover. The style only picks the look of
+# a cover that `cover` turns on; it never creates one on its own, so `--gradient`
+# (or `cover_style: gradient`) needs `--cover` / `cover: true` alongside it.
 COVER_STYLE="${COVER_STYLE:-${FM_cover_style:-light}}"
 [[ "$COVER_STYLE" == "gradient" ]] || COVER_STYLE=light
 

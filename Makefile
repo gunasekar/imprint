@@ -71,7 +71,7 @@ preview:
 	./imprint examples/sample.md --no-cover --no-confidential -o .tmp/preview/nocover.pdf
 	./imprint examples/sample.md --cover --no-gradient --no-logo --no-confidential -o .tmp/preview/cover.pdf
 	./imprint examples/sample.md --cover --no-gradient --logo logo.svg --no-confidential -o .tmp/preview/coverlogo.pdf
-	./imprint examples/sample.md --gradient --logo logo.svg --logo-dark-bg logo-dark-bg.svg --no-confidential -o .tmp/preview/gradient.pdf
+	./imprint examples/sample.md --cover --gradient --logo logo.svg --logo-dark-bg logo-dark-bg.svg --no-confidential -o .tmp/preview/gradient.pdf
 	@# cover variants — page 1 of each (pair = "src outname")
 	@for pair in "nocover nocover" "cover cover" "coverlogo cover-logo" "gradient cover-logo-gradient"; do \
 	  set -- $$pair; \
