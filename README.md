@@ -58,6 +58,11 @@ theme change.
   an optional category eyebrow. Prefer something bolder? Add `--gradient` (or
   `cover_style: gradient`) alongside it to swap that cover for a dark accent wash
   with lifted-accent highlights — the style picks the look, `--cover` turns it on.
+- **Optional TOC and section numbering** — both **off by default**, so output stays
+  1:1 with your Markdown. Pass `--toc` (or `toc: true`) for a table of contents with
+  page numbers; pass `--numbered` (or `numbered: true`) to number headings. Numbering
+  is render-only — it never touches your heading text, just as the source `.md` is
+  never modified.
 - **Graphite + blue theme** — graphite body text, a single configurable accent (a
   professional technical blue by default) on headings, links, section dividers,
   table headers, and callouts. Change one value in config to re-tint the whole
@@ -247,6 +252,10 @@ per document.
 | `cover` / `--cover` `--no-cover` | `false` (config) | Render the title page |
 | `cover_style` / `--cover-style` `--gradient` | `light` (config) | Cover look: `light` or `gradient` (an accent wash). Only sets the look — pair it with `cover: true` / `--cover` |
 | `confidential` / `--confidential` | `false` (config) | Adds a "Confidential" marker |
+| `toc` / `--toc` `--no-toc` | `false` (config) | Add a table of contents (with page numbers) after the cover / masthead |
+| `numbered` / `--numbered` `--no-numbered` | `false` (config) | Number the headings (`1`, `1.1`, …). Render-only — your heading text is untouched |
+| `lang` / `--lang` | `en` (config) | Body language (BCP 47, e.g. `en-GB`, `de`) for hyphenation and justification |
+| `code_font_size` / `--code-font-size` | `9.2` (config) | Block-code font size in pt |
 | `template` / `--template` | bundled `default.typ` | Path to a custom Typst template. A config path resolves relative to the config file, a front-matter path relative to the `.md` |
 
 ### Custom templates and extra fields

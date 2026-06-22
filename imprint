@@ -11,7 +11,9 @@
 #          [--recipient R] [--date D] [--category C] [--accent #HEX]
 #          [--logo PATH | --no-logo] [--logo-dark-bg PATH] [--logo-height PT]
 #          [--cover | --no-cover] [--cover-style light|gradient] [--gradient]
-#          [--confidential | --no-confidential] [--keep-h1] [--template PATH]
+#          [--toc | --no-toc] [--numbered | --no-numbered] [--lang BCP47]
+#          [--code-font-size PT] [--confidential | --no-confidential]
+#          [--keep-h1] [--template PATH]
 #          [--profile NAME | --list-profiles | --conventions]
 #
 # imprint keeps two things apart. HOUSE STYLE — the theme accent, fonts, your logo,
@@ -69,9 +71,10 @@ IN=""; OUT=""
 TITLE=""; SUBTITLE=""; DESC=""; AUTHOR=""; FOOTER_TEXT_CLI=""
 RECIPIENT=""; DATE=""; CONF=""; KEEP_H1=0; COVER=""; CATEGORY=""; ACCENT=""; LOGO_CLI=""; LOGO_HEIGHT_CLI=""
 COVER_STYLE=""; LOGO_DARK_BG_CLI=""; NO_LOGO=0; PROFILE_CLI=""; LIST_PROFILES=0; SHOW_CONVENTIONS=0; TEMPLATE_CLI=""
+TOC=""; NUMBERED=""; DOC_LANG_CLI=""; CODE_SIZE_CLI=""
 
 usage() {
-  sed -n '2,28p' "$SOURCE" | sed 's/^# \{0,1\}//'
+  sed -n '2,30p' "$SOURCE" | sed 's/^# \{0,1\}//'
 }
 
 while [[ $# -gt 0 ]]; do
@@ -102,6 +105,12 @@ while [[ $# -gt 0 ]]; do
     --no-gradient) COVER_STYLE=light; shift;;
     --confidential) CONF=1; shift;;
     --no-confidential) CONF=0; shift;;
+    --toc) TOC=1; shift;;
+    --no-toc) TOC=0; shift;;
+    --numbered) NUMBERED=1; shift;;
+    --no-numbered) NUMBERED=0; shift;;
+    --lang) DOC_LANG_CLI="$2"; shift 2;;
+    --code-font-size) CODE_SIZE_CLI="$2"; shift 2;;
     --keep-h1) KEEP_H1=1; shift;;
     -*) echo "unknown flag: $1" >&2; exit 2;;
     *) IN="$1"; shift;;
@@ -225,7 +234,8 @@ if m:
 # (document metadata + any per-doc overrides) layers on top. Document-specific
 # fields — title, author, footer_text, recipient, ... — never come from config.
 PDF_CONFIG_KEYS = ("accent", "font_body", "font_head", "font_mono", "cover",
-                   "cover_style", "confidential", "logo", "logo_dark_bg", "logo_height",
+                   "cover_style", "confidential", "toc", "numbered", "lang",
+                   "code_font_size", "logo", "logo_dark_bg", "logo_height",
                    "template")
 merged = {k: cfg[k] for k in PDF_CONFIG_KEYS if cfg.get(k) not in (None, "")}
 merged.update(fm)
@@ -267,7 +277,8 @@ for key in ("logo", "logo_dark_bg", "template"):
 
 # Emit recognized keys to meta.kv (bash applies CLI overrides + defaults on top).
 KEYS = ("title", "subtitle", "description", "author", "date", "recipient",
-        "category", "cover", "cover_style", "confidential", "accent", "logo",
+        "category", "cover", "cover_style", "confidential", "toc", "numbered",
+        "lang", "code_font_size", "accent", "logo",
         "logo_dark_bg", "font_body", "font_head", "font_mono", "footer_text",
         "logo_height", "template")
 meta = {k: merged[k] for k in KEYS if merged.get(k) not in (None, "")}
@@ -349,6 +360,7 @@ PY
 # ---- merge metadata: CLI flag > front matter > config > built-in default ----
 FM_title=""; FM_subtitle=""; FM_description=""; FM_author=""
 FM_recipient=""; FM_date=""; FM_cover=""; FM_cover_style=""; FM_confidential=""; FM_category=""
+FM_toc=""; FM_numbered=""; FM_lang=""; FM_code_font_size=""
 FM_accent=""; FM_logo=""; FM_logo_dark_bg=""; FM_font_body=""; FM_font_head=""; FM_font_mono=""; FM_footer_text=""; FM_logo_height=""; FM_template=""
 if [[ -f "$BUILD/meta.kv" ]]; then
   while IFS='=' read -r k v; do
@@ -362,6 +374,10 @@ if [[ -f "$BUILD/meta.kv" ]]; then
       cover)        FM_cover="$v";;
       cover_style)  FM_cover_style="$v";;
       confidential) FM_confidential="$v";;
+      toc)          FM_toc="$v";;
+      numbered)     FM_numbered="$v";;
+      lang)         FM_lang="$v";;
+      code_font_size) FM_code_font_size="$v";;
       category)     FM_category="$v";;
       accent)       FM_accent="$v";;
       logo)         FM_logo="$v";;
@@ -391,6 +407,14 @@ FOOTER_TEXT="${FOOTER_TEXT_CLI:-${FM_footer_text:-${AUTHOR}}}"
 # Boolean toggles: CLI (1/0) wins; else front matter / config; else default off.
 truthy() { case "$1" in true|True|TRUE|1|yes|Yes|on) return 0;; *) return 1;; esac; }
 if [[ -z "$CONF"  ]]; then truthy "$FM_confidential" && CONF=1 || CONF=0; fi
+if [[ -z "$TOC"   ]]; then truthy "$FM_toc"      && TOC=1      || TOC=0;      fi
+if [[ -z "$NUMBERED" ]]; then truthy "$FM_numbered" && NUMBERED=1 || NUMBERED=0; fi
+
+# Body language and block-code size: free-form scalars (CLI flag > front matter /
+# config). Empty means "not set" — the template supplies the default (lang=en,
+# code size 0.92em), so an unset value leaves output unchanged.
+DOC_LANG="${DOC_LANG_CLI:-${FM_lang}}"
+CODE_SIZE="${CODE_SIZE_CLI:-${FM_code_font_size}}"
 
 # Cover style: CLI flag > front matter / config; default "light". Only "gradient"
 # is special — anything else is the light cover. The style only picks the look of
@@ -414,7 +438,11 @@ COMMON=( -V title="$TITLE" )
 [[ -n "$FM_font_body" ]] && COMMON+=(-V font_body="$FM_font_body")
 [[ -n "$FM_font_head" ]] && COMMON+=(-V font_head="$FM_font_head")
 [[ -n "$FM_font_mono" ]] && COMMON+=(-V font_mono="$FM_font_mono")
+[[ -n "$DOC_LANG"   ]] && COMMON+=(-V lang="$DOC_LANG")
+[[ -n "$CODE_SIZE"  ]] && COMMON+=(-V code_font_size="$CODE_SIZE")
 [[ "$CONF"  == "1" ]] && COMMON+=(-V confidential=true)
+[[ "$TOC"   == "1" ]] && COMMON+=(-V toc=true)
+[[ "$NUMBERED" == "1" ]] && COMMON+=(-V numbered=true)
 [[ "$COVER" == "1" ]] && COMMON+=(-V cover=true)
 [[ "$COVER" == "1" && "$COVER_STYLE" == "gradient" ]] && COMMON+=(-V cover_style=gradient)
 

@@ -45,6 +45,14 @@ font_mono:     "JetBrains Mono"
 cover:         false         # title page OFF by default; set true or pass --cover
 cover_style:   light         # look of the cover when shown: "light" (default) or "gradient" (an accent wash); needs cover: true
 confidential:  false         # adds a "Confidential" marker when true
+toc:           false         # table of contents OFF by default; set true or pass --toc (page numbers Markdown can't carry)
+numbered:      false         # section numbering OFF by default; set true or pass --numbered (render-only, your headings are untouched)
+
+# --- Typesetting ---
+# lang: body language (BCP 47) — drives hyphenation + justification; default "en".
+# lang:          "en"        # e.g. "en-GB", "de", "fr"
+# code_font_size: block-code size in pt; default keeps the built-in 0.92em.
+# code_font_size: 8.5
 
 # --- Custom template (optional) ---
 # The bundled default.typ is used unless you name your own Typst template here. The

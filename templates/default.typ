@@ -36,6 +36,27 @@
 #let logo-height = ($if(logo_height)$$logo_height$$else$40$endif$) * 1pt
 // Cover style: "light" (default, a calm pale cover) or "gradient" (an accent wash).
 #let cover-style = "$if(cover_style)$$cover_style$$else$light$endif$"
+// Body text language (BCP 47, e.g. "en", "en-GB", "de") — drives hyphenation and
+// justification. Default English. Pure typesetting, no change to the source text.
+// Typst wants the language code and region split apart, so a "lang-REGION" tag is
+// parsed into a 2-3 letter code plus an optional uppercase region.
+#let lang-tag = "$if(lang)$$lang$$else$en$endif$"
+#let lang-parts = lang-tag.split("-")
+#let doc-lang = lang-parts.at(0)
+#let doc-region = if lang-parts.len() > 1 { upper(lang-parts.at(1)) } else { none }
+// Block code size: an absolute pt when `code_font_size` is set, else 0.92em — the
+// same size as before, so unset output is unchanged. Inline code keeps 0.92em.
+#let code-block-size = $if(code_font_size)$($code_font_size$ * 1pt)$else$0.92em$endif$
+// Opt-in heading numbering (numbered: true), a reversible render-time toggle — the
+// numbers live only in the layout, never in the source text. The first H1 becomes
+// the (stripped) title, so body sections start at H2; trimming leading zero
+// counters makes the shallowest body heading the top number (H2 -> "1", an H3
+// under it -> "1.1"). With --keep-h1 the H1 is non-zero and nothing is trimmed.
+#let heading-numbering = (..n) => {
+  let nums = n.pos()
+  while nums.len() > 1 and nums.first() == 0 { nums = nums.slice(1) }
+  numbering("1.1.1.1.1.1", ..nums)
+}
 // Gradient cover (opt-in): a 45° diagonal wash echoing proof — a dark, neutral
 // slate anchor at the top-left flowing through a deep accent to the accent itself
 // at the bottom-right, with two soft accent glows over it. The slate anchor is a
@@ -84,7 +105,7 @@ $endif$
 #let conf(
   title: none, subtitle: none, description: none,
   authors: (), date: none, recipient: none, confidential: false,
-  category: none, cover: false, footer-text: none,
+  category: none, cover: false, toc: false, numbered: false, footer-text: none,
   doc,
 ) = {
   // PDF metadata (viewer tab / Get Info). Author is set only from an explicit
@@ -94,7 +115,7 @@ $endif$
   let meta-keywords = if category != none { (category,) } else { () }
   set document(title: title, author: meta-author, keywords: meta-keywords)
   set page("a4", margin: (x: 2.2cm, top: 2.5cm, bottom: 2.0cm))
-  set text(font: body-font, size: 10pt, fill: ink)
+  set text(font: body-font, size: 10pt, fill: ink, lang: doc-lang, region: doc-region)
   set par(justify: true, leading: 0.65em, spacing: 1.0em)
   set list(spacing: 0.8em)
   set enum(spacing: 0.8em)
@@ -111,6 +132,8 @@ $endif$
   show heading.where(level: 6): set text(size: 9.5pt)
   show heading.where(level: 1): set block(above: 1.9em, below: 1.15em)
   show heading.where(level: 1): set text(size: 17pt)
+  // Opt-in section numbering (off by default, so output stays 1:1 with the source).
+  set heading(numbering: if numbered { heading-numbering } else { none })
 
   // Task-list checkboxes (the sans lacks the ballot glyphs, so draw them).
   show "☐": box(width: 0.8em, height: 0.8em, stroke: 0.7pt + muted, radius: 2pt, baseline: 0.12em)
@@ -125,6 +148,8 @@ $endif$
     fill: surface, inset: 9pt, radius: 4pt, width: 100%,
     stroke: 0.5pt + hairline,
   )
+  // Block code size (code_font_size); default 0.92em keeps current output.
+  show raw.where(block: true): set text(size: code-block-size)
   // Callouts: a Markdown block quote renders as a tinted note box with an accent
   // left bar and a bold colored lead-in label.
   show quote.where(block: true): it => block(
@@ -282,6 +307,21 @@ $endif$
       line(length: 100%, stroke: 0.5pt + hairline)
     })
   }
+  // Optional table of contents (toc: true) — navigation furniture derived purely
+  // from the headings already in the document; off by default. Page numbers are
+  // something the Markdown source cannot carry, so this adds, never mutates. The
+  // TOC follows the cover/masthead and ends with a page break so the body starts
+  // clean. Depth 3 lists the top two body levels (H2 sections, H3 subsections).
+  if toc {
+    block(below: 1.6em, {
+      text(font: head-font, size: 15pt, fill: accent, weight: 700)[Contents]
+      v(0.7em)
+      set text(fill: ink)
+      show outline.entry.where(level: 1): set block(above: 0.9em)
+      outline(title: none, depth: 3, indent: 1.2em)
+    })
+    pagebreak(weak: true)
+  }
   doc
 }
 
@@ -294,6 +334,8 @@ $if(recipient)$  recipient: [$recipient$],$endif$
 $if(category)$  category: "$category$",$endif$
 $if(confidential)$  confidential: true,$endif$
 $if(cover)$  cover: true,$endif$
+$if(toc)$  toc: true,$endif$
+$if(numbered)$  numbered: true,$endif$
 $if(footer_text)$  footer-text: [$footer_text$],$endif$
   authors: ($for(author)$"$author$", $endfor$),
   doc,
