@@ -6,18 +6,26 @@ category: "Documentation"
 -->
 # imprint
 
-Turn Markdown into **branded, typeset PDFs** — the specs, design docs, and
-reports that need to look official. One command gives you a title page, a running
-header and footer, and a consistent house style, with your content flowed
-straight through. Determinism is built in: a fixed pandoc → Typst pipeline means
-the same input always produces the same PDF, on any machine.
+Turn Markdown into **branded, typeset PDFs** — the specs, design docs, and reports
+that need to look official. One command gives you a title page, a running header
+and footer, and a consistent house style, with your content flowed straight through.
 
-imprint keeps two things apart. **How** a PDF is rendered — the theme accent,
-fonts, your logo, and default toggles — lives in a small config file: a reusable
-house style you point at any document. **What** a document says — its title,
-author, footer name, recipient, and so on — lives in that document's front matter
-(or a CLI flag). Set your brand once in config; each document overrides only what
-it needs.
+What sets it apart:
+
+- **Zero-config & lightweight** — `imprint report.md` just works. No LaTeX — just
+  pandoc and Typst, both single static binaries. Every key is optional; the neutral
+  defaults render fine on their own.
+- **Reusable house styles** — set your brand once (accent, fonts, logo) and apply
+  it to every document. **How** a PDF is rendered lives in a small config file;
+  **what** a document says lives in its front matter. Keep one config per org as a
+  **profile** and switch with `--profile`; each document overrides only what it needs.
+- **Deterministic** — bundled, embedded fonts and a fixed pandoc → Typst pipeline
+  (system fonts ignored) typeset the same input identically on any machine. The PDF
+  timestamp follows the source file; set `SOURCE_DATE_EPOCH` for byte-identical
+  output in CI.
+
+In short: Quarto's set-brand-once model without Quarto's weight, and Eisvogel's
+polish without LaTeX.
 
 ```bash
 imprint report.md                      # -> report.pdf
@@ -75,7 +83,8 @@ theme change.
   ignores system fonts, so output is identical on any machine. Need a brand
   typeface? Drop its TTFs in `~/.config/imprint/fonts/` and name the family in
   config — imprint searches that dir too.
-- **Typeset with Typst** — a single static binary; deterministic, reproducible.
+- **Typeset with Typst** — a single static binary; deterministic and reproducible
+  (pin `SOURCE_DATE_EPOCH` for byte-identical PDFs across machines and CI).
 
 ## Install
 
