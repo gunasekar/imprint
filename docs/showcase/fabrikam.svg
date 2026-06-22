@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 64" role="img" aria-label="Fabrikam">
+  <rect x="15" y="16" width="15" height="15" rx="2.5" fill="#FFFFFF"/>
+  <rect x="34" y="16" width="15" height="15" rx="2.5" fill="#FFFFFF" fill-opacity="0.55"/>
+  <rect x="15" y="35" width="15" height="15" rx="2.5" fill="#FFFFFF" fill-opacity="0.55"/>
+  <rect x="34" y="35" width="15" height="15" rx="2.5" fill="#FFFFFF"/>
+  <text x="60" y="43" font-family="Source Sans 3, sans-serif" font-size="27" font-weight="700" letter-spacing="-0.3" fill="#FFFFFF">Fabrikam</text>
+</svg>

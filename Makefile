@@ -4,7 +4,7 @@ BINDIR := $(PREFIX)/bin
 # Where Claude Code looks for user skills (override with SKILLDIR=...).
 SKILLDIR ?= $(HOME)/.claude/skills
 
-.PHONY: install uninstall skill uninstall-skill check lint-md example config profile preview
+.PHONY: install uninstall skill uninstall-skill check lint-md example config profile preview showcase
 
 ## Symlink imprint onto your PATH (override with PREFIX=~/.local)
 install:
@@ -68,9 +68,10 @@ example:
 	./imprint examples/sample.md -o examples/sample.pdf
 	@echo "wrote examples/sample.pdf"
 
-## Regenerate the README snapshot grid (docs/images/) from examples/sample.md —
-## the same source with different switches: the four cover variants plus a body
-## and diagram page. Needs pdftoppm (poppler) and magick (ImageMagick).
+## Render the bundled sample in all its variants to docs/images/sample-*.png — the
+## masthead and three cover styles, plus a body and diagram page. `make showcase`
+## composites four of these into the README strips. Needs pdftoppm (poppler) and
+## magick (ImageMagick).
 preview:
 	@mkdir -p docs/images .tmp/preview
 	./imprint examples/sample.md --no-cover --no-confidential -o .tmp/preview/nocover.pdf
@@ -88,3 +89,20 @@ preview:
 	@magick .tmp/preview/cl-2.png -resize 900x -bordercolor '#D8DBE0' -border 1 -strip docs/images/sample-body.png
 	@magick .tmp/preview/cl-3.png -resize 900x -bordercolor '#D8DBE0' -border 1 -strip docs/images/sample-diagram.png
 	@echo "wrote docs/images/sample-{nocover,cover,cover-logo,cover-logo-gradient,body,diagram}.png"
+
+## Rebuild the three captioned README showcase strips (docs/images/showcase-*.png)
+## from examples/sample.md, the org logos in docs/showcase/, and the sample frames
+## from `preview`. Composited with Typst. Needs pdftoppm (poppler) and typst.
+showcase: preview
+	@mkdir -p .tmp/showcase
+	@# one gradient cover per org — its own logo + accent (page 1). sample.md sets
+	@# confidential: true, so each cover keeps its CONFIDENTIAL marker.
+	./imprint examples/sample.md --cover --gradient --logo-dark-bg docs/showcase/acme.svg     --accent '#2563EB' -o .tmp/showcase/acme.pdf
+	./imprint examples/sample.md --cover --gradient --logo-dark-bg docs/showcase/contoso.svg  --accent '#0D9488' -o .tmp/showcase/contoso.pdf
+	./imprint examples/sample.md --cover --gradient --logo-dark-bg docs/showcase/fabrikam.svg --accent '#B91C1C' -o .tmp/showcase/fabrikam.pdf
+	@for o in acme contoso fabrikam; do pdftoppm -png -singlefile -r 150 -f 1 -l 1 ".tmp/showcase/$$o.pdf" ".tmp/showcase/$$o"; done
+	@# compose the captioned strips (--root lets the scripts read /docs and /.tmp)
+	typst compile docs/showcase/profiles.typ docs/images/showcase-profiles.png --root "$(CURDIR)" --font-path assets/fonts --ignore-system-fonts --ppi 200
+	typst compile docs/showcase/covers.typ   docs/images/showcase-covers.png   --root "$(CURDIR)" --font-path assets/fonts --ignore-system-fonts --ppi 200
+	typst compile docs/showcase/interior.typ docs/images/showcase-interior.png --root "$(CURDIR)" --font-path assets/fonts --ignore-system-fonts --ppi 200
+	@echo "wrote docs/images/showcase-{profiles,covers,interior}.png"

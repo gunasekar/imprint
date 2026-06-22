@@ -35,24 +35,25 @@ imprint report.md --accent "#2563EB"   # re-theme for one run
 
 ## What it looks like
 
-All six are the **same** [`examples/sample.md`](examples/sample.md) — only the
-switches differ. The cover is **off by default**: with no cover, the first page
-opens with a **masthead** (title, subtitle, description) and the running header
-begins on page 2. Add `--cover` for a title page, drop in your `logo`, or switch to
-a `--gradient` accent wash. The last two cells are a body page and the diagram page.
+Every image below renders the same [`examples/sample.md`](examples/sample.md) —
+only the config and switches change.
 
-| Without cover (masthead) | Cover (`--cover`) | Cover + logo |
-|:---:|:---:|:---:|
-| <img src="docs/images/sample-nocover.png" width="250" alt="No cover — title masthead on page 1"> | <img src="docs/images/sample-cover.png" width="250" alt="Light cover, no logo"> | <img src="docs/images/sample-cover-logo.png" width="250" alt="Light cover with logo"> |
+**Set your brand once — a profile per org.** The accent color and logo live in a
+config file; switch with `--profile`. Same document, three brands:
 
-| Cover + logo + gradient | Body page | Diagram |
-|:---:|:---:|:---:|
-| <img src="docs/images/sample-cover-logo-gradient.png" width="250" alt="Gradient accent-wash cover with logo"> | <img src="docs/images/sample-body.png" width="250" alt="Body page — heading, callout, table, code"> | <img src="docs/images/sample-diagram.png" width="250" alt="Mermaid diagram as a framed figure"> |
+![The same document rendered as three org profiles — Acme (blue), Contoso (teal), and Fabrikam (maroon), each with its own accent color and logo](docs/images/showcase-profiles.png)
 
-The **gradient** is a dark slate wash flowing into your `accent`, with the subtitle
-and labels lifted into a brighter accent; a dark logo would vanish on it, so it
-uses an optional `logo_dark_bg`. Regenerate all six with `make preview` after a
-theme change.
+**The cover is optional.** Off by default, the first page opens with a masthead
+(title, subtitle, description) and the running header begins on page 2; `--cover`
+adds a calm, light title page, and `--gradient` swaps in a dark accent wash. A
+light logo (`logo_dark_bg`) keeps the mark visible on that wash.
+
+![Masthead by default, or a calm light title page with --cover](docs/images/showcase-covers.png)
+
+**Markdown in, typeset PDF out.** Block quotes become callouts, tables span the full
+page width, code is themed, and Mermaid blocks render to crisp vector figures.
+
+![A body page with a callout, table, and code, beside a Mermaid diagram rendered as a framed figure](docs/images/showcase-interior.png)
 
 ## What you get
 
@@ -195,13 +196,13 @@ style — a **profile** — under `~/.config/imprint/profiles/`, and selecting i
     acme.yaml                 # accent, fonts, logo for Acme
     acme.svg
     acme-dark.svg             # logo_dark_bg for Acme's gradient cover
-    globex.yaml
-    globex.svg
+    contoso.yaml
+    contoso.svg
 ```
 
 ```bash
 imprint report.md --profile acme      # Acme's accent + Acme logo
-imprint report.md --profile globex    # Globex's accent + Globex logo
+imprint report.md --profile contoso   # Contoso's accent + Contoso logo
 make profile NAME=acme                # scaffold profiles/acme.yaml from the example
 imprint --list-profiles               # show the profiles you have
 ```
