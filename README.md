@@ -247,6 +247,40 @@ per document.
 | `cover` / `--cover` `--no-cover` | `false` (config) | Render the title page |
 | `cover_style` / `--cover-style` `--gradient` | `light` (config) | Cover look: `light` or `gradient` (an accent wash). Only sets the look — pair it with `cover: true` / `--cover` |
 | `confidential` / `--confidential` | `false` (config) | Adds a "Confidential" marker |
+| `template` / `--template` | bundled `default.typ` | Path to a custom Typst template. A config path resolves relative to the config file, a front-matter path relative to the `.md` |
+
+### Custom templates and extra fields
+
+The bundled `default.typ` covers most documents, but you can point imprint at your
+own Typst template — per document (`template:` / `--template`) or as a house-style
+default in a config or profile. A config-level `template:` resolves next to the
+config file (like `logo:`), so a profile can ship its own layout beside its assets:
+
+```yaml
+# ~/.config/imprint/profiles/acme.yaml
+accent:   "#B91C1C"
+logo:     "acme.svg"
+template: "acme.typ"     # resolved next to this profile
+```
+
+A custom template receives **every key in the table above** as a variable, plus a
+**passthrough**: any extra scalar key you set in front matter or config — one the
+engine doesn't recognize — is forwarded to the template as a variable of the same
+name. So a new field needs no change to imprint itself — just author the template
+and set the field:
+
+```markdown
+<!--
+title: "Master Services Agreement"
+template: "contract.typ"
+version: "2.1"          # not a built-in key — passed straight to the template
+effective_date: "2026-07-01"
+-->
+```
+
+In the template, read them like any pandoc variable: `$version$`, `$effective_date$`.
+Keys must be identifier-like (letters, digits, underscore); `body`, `toc`, and `meta`
+are reserved for pandoc.
 
 ## Authoring conventions
 

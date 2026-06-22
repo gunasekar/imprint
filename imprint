@@ -11,7 +11,7 @@
 #          [--recipient R] [--date D] [--category C] [--accent #HEX]
 #          [--logo PATH | --no-logo] [--logo-dark-bg PATH] [--logo-height PT]
 #          [--cover | --no-cover] [--cover-style light|gradient] [--gradient]
-#          [--confidential | --no-confidential] [--keep-h1]
+#          [--confidential | --no-confidential] [--keep-h1] [--template PATH]
 #          [--profile NAME | --list-profiles | --conventions]
 #
 # imprint keeps two things apart. HOUSE STYLE — the theme accent, fonts, your logo,
@@ -26,6 +26,15 @@
 # set a default with IMPRINT_PROFILE); --list-profiles prints what you have. A
 # profile's logo path resolves next to the profile, so each profile's assets live
 # together.
+#
+# Custom layout: the bundled template (templates/default.typ) is the default, but a
+# `template:` key (config / front matter) or --template PATH selects another .typ —
+# resolved like the logo (next to the config for a config value, next to the .md for
+# front matter). A custom template gets every variable below, plus any extra scalar
+# key you put in front matter or config: unrecognized keys are passed straight
+# through to the template as variables, so a new template field needs no engine
+# change — just author the .typ and set the field. (Identifier-like keys only:
+# letters, digits, underscore.)
 #
 # Precedence: CLI flag > front matter (document) > config (house style) > default.
 # No cover by default — the first page opens with a title masthead and the running
@@ -59,7 +68,7 @@ CONFIG=""
 IN=""; OUT=""
 TITLE=""; SUBTITLE=""; DESC=""; AUTHOR=""; FOOTER_TEXT_CLI=""
 RECIPIENT=""; DATE=""; CONF=""; KEEP_H1=0; COVER=""; CATEGORY=""; ACCENT=""; LOGO_CLI=""; LOGO_HEIGHT_CLI=""
-COVER_STYLE=""; LOGO_DARK_BG_CLI=""; NO_LOGO=0; PROFILE_CLI=""; LIST_PROFILES=0; SHOW_CONVENTIONS=0
+COVER_STYLE=""; LOGO_DARK_BG_CLI=""; NO_LOGO=0; PROFILE_CLI=""; LIST_PROFILES=0; SHOW_CONVENTIONS=0; TEMPLATE_CLI=""
 
 usage() {
   sed -n '2,28p' "$SOURCE" | sed 's/^# \{0,1\}//'
@@ -83,6 +92,7 @@ while [[ $# -gt 0 ]]; do
     --no-logo) NO_LOGO=1; shift;;
     --logo-height) LOGO_HEIGHT_CLI="$2"; shift 2;;
     --profile) PROFILE_CLI="$2"; shift 2;;
+    --template) TEMPLATE_CLI="$2"; shift 2;;
     --list-profiles) LIST_PROFILES=1; shift;;
     --conventions) SHOW_CONVENTIONS=1; shift;;
     --cover) COVER=1; shift;;
@@ -215,7 +225,8 @@ if m:
 # (document metadata + any per-doc overrides) layers on top. Document-specific
 # fields — title, author, footer_text, recipient, ... — never come from config.
 PDF_CONFIG_KEYS = ("accent", "font_body", "font_head", "font_mono", "cover",
-                   "cover_style", "confidential", "logo", "logo_dark_bg", "logo_height")
+                   "cover_style", "confidential", "logo", "logo_dark_bg", "logo_height",
+                   "template")
 merged = {k: cfg[k] for k in PDF_CONFIG_KEYS if cfg.get(k) not in (None, "")}
 merged.update(fm)
 if not merged.get("title") and h1:
@@ -245,7 +256,9 @@ def resolve_asset(key):
         return None
     p = pathlib.Path(val)
     return str(p if p.is_absolute() else base / p)
-for key in ("logo", "logo_dark_bg"):
+# logo/logo_dark_bg are image assets; `template` is a .typ path resolved the same
+# way (next to the config for a config value, next to the .md for front matter).
+for key in ("logo", "logo_dark_bg", "template"):
     resolved = resolve_asset(key)
     if resolved:
         merged[key] = resolved
@@ -256,9 +269,25 @@ for key in ("logo", "logo_dark_bg"):
 KEYS = ("title", "subtitle", "description", "author", "date", "recipient",
         "category", "cover", "cover_style", "confidential", "accent", "logo",
         "logo_dark_bg", "font_body", "font_head", "font_mono", "footer_text",
-        "logo_height")
+        "logo_height", "template")
 meta = {k: merged[k] for k in KEYS if merged.get(k) not in (None, "")}
 (build / "meta.kv").write_text("".join(f"{k}={v}\n" for k, v in meta.items()))
+
+# Generic passthrough: any extra scalar key — in front matter or config — that is
+# not one of the recognized KEYS above is forwarded to the template as a variable.
+# This lets a custom template add fields (a version, a client, an effective date)
+# driven entirely by front matter, with no change to this engine. Restricted to
+# identifier-like keys (a valid Typst/pandoc variable name) so stray YAML can't
+# inject odd -V flags; front matter wins over config for the same key.
+ident = re.compile(r'^[A-Za-z][A-Za-z0-9_]*$')
+# pandoc fills these itself — never let a stray key overwrite the rendered body etc.
+RESERVED_VARS = {"body", "toc", "meta"}
+extra = {}
+for source in (cfg, fm):
+    for k, v in source.items():
+        if k not in KEYS and k not in RESERVED_VARS and ident.match(k) and v not in (None, ""):
+            extra[k] = v
+(build / "extra.kv").write_text("".join(f"{k}={v}\n" for k, v in extra.items()))
 
 # Local images: copy each referenced file into the build dir (resolving relative
 # to the source .md, `srcdir` from above) and rewrite the link, so Typst finds it
@@ -320,7 +349,7 @@ PY
 # ---- merge metadata: CLI flag > front matter > config > built-in default ----
 FM_title=""; FM_subtitle=""; FM_description=""; FM_author=""
 FM_recipient=""; FM_date=""; FM_cover=""; FM_cover_style=""; FM_confidential=""; FM_category=""
-FM_accent=""; FM_logo=""; FM_logo_dark_bg=""; FM_font_body=""; FM_font_head=""; FM_font_mono=""; FM_footer_text=""; FM_logo_height=""
+FM_accent=""; FM_logo=""; FM_logo_dark_bg=""; FM_font_body=""; FM_font_head=""; FM_font_mono=""; FM_footer_text=""; FM_logo_height=""; FM_template=""
 if [[ -f "$BUILD/meta.kv" ]]; then
   while IFS='=' read -r k v; do
     case "$k" in
@@ -342,6 +371,7 @@ if [[ -f "$BUILD/meta.kv" ]]; then
       font_head)    FM_font_head="$v";;
       font_mono)    FM_font_mono="$v";;
       footer_text)  FM_footer_text="$v";;
+      template)     FM_template="$v";;
     esac
   done < "$BUILD/meta.kv"
 fi
@@ -417,9 +447,29 @@ copy_logo "$LOGO_DARK_BG" logo-dark-bg logo_dark_bg
 LOGO_HEIGHT="${LOGO_HEIGHT_CLI:-${FM_logo_height}}"
 [[ -n "$LOGO_HEIGHT" ]] && COMMON+=(-V logo_height="$LOGO_HEIGHT")
 
+# Generic passthrough: extra front-matter / config keys the preprocessor collected
+# (everything not a recognized key) become template variables, so a custom template
+# can read fields this engine has never heard of without any code change here.
+if [[ -f "$BUILD/extra.kv" ]]; then
+  while IFS='=' read -r k v; do
+    [[ -n "$k" ]] && COMMON+=(-V "$k=$v")
+  done < "$BUILD/extra.kv"
+fi
+
+# Template: --template (cwd-relative) wins; else a config / front-matter `template`
+# (already resolved to an absolute path by the preprocessor); else the bundled
+# default. A named-but-missing template is an error — fail loudly, don't silently
+# fall back to default and render the wrong layout.
+TEMPLATE_PATH="$TEMPLATES/default.typ"
+TEMPLATE="${TEMPLATE_CLI:-${FM_template}}"
+if [[ -n "$TEMPLATE" ]]; then
+  if [[ -f "$TEMPLATE" ]]; then TEMPLATE_PATH="$TEMPLATE"
+  else echo "imprint: template not found: $TEMPLATE" >&2; exit 2; fi
+fi
+
 # --columns=1 forces pandoc to translate every pipe table's dash ratios into
 # explicit column widths. --wrap=none keeps it from hard-wrapping generated Typst.
-pandoc "$BUILD/processed.md" -t typst --template "$TEMPLATES/default.typ" \
+pandoc "$BUILD/processed.md" -t typst --template "$TEMPLATE_PATH" \
   --columns=1 --wrap=none "${COMMON[@]}" -o "$BUILD/doc.typ"
 # Fonts: the bundled families, plus an optional user font dir for custom faces a
 # profile names (e.g. a brand's typeface). --ignore-system-fonts keeps the render

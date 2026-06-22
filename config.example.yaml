@@ -45,3 +45,12 @@ font_mono:     "JetBrains Mono"
 cover:         false         # title page OFF by default; set true or pass --cover
 cover_style:   light         # look of the cover when shown: "light" (default) or "gradient" (an accent wash); needs cover: true
 confidential:  false         # adds a "Confidential" marker when true
+
+# --- Custom template (optional) ---
+# The bundled default.typ is used unless you name your own Typst template here. The
+# path resolves relative to THIS file (keep it beside your config/profile), or use
+# an absolute path; a document overrides it with `template:` or --template. A custom
+# template gets every key above as a variable, plus any extra scalar key you add to
+# front matter or config (a `version`, a `client`, …) — unrecognized keys are passed
+# straight through, so a new field needs no change to imprint.
+# template:     "house.typ"
