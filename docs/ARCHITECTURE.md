@@ -5,8 +5,9 @@ How imprint turns a Markdown file into a PDF, and why it's built this way.
 ## The pipeline
 
 imprint is one bash script (`imprint`) wrapping a four-stage pipeline. Every stage
-is deterministic — given the same input and the same bundled fonts, the output
-is byte-identical.
+is deterministic — given the same input and the same bundled fonts, the typeset
+output is byte-identical, save for the PDF's embedded timestamp (see
+[§3](#3-typst-compile)).
 
 ```
 config.yaml ─┐
@@ -68,6 +69,15 @@ generated Typst (which would corrupt code blocks).
 typesets the PDF. `--ignore-system-fonts` means only the bundled `assets/fonts/`
 are used — never the machine's installed fonts — so the same input produces
 identical output anywhere, and a stray system font can never shadow a bundled one.
+
+Typst otherwise stamps the wall clock into the PDF's `/CreationDate` and
+`/ModDate`, which would make two renders of the same file differ byte-for-byte. So
+imprint sets `SOURCE_DATE_EPOCH` before compiling (Typst reads it from the
+environment): an externally-provided value wins — the reproducible-builds
+convention, so CI can pin a fixed timestamp for byte-identical output across
+machines — otherwise it falls back to the input `.md`'s modification time, which
+keeps re-rendering the same source byte-identical while leaving the timestamp
+meaningful.
 
 ### 4. Output
 

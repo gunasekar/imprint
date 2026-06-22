@@ -505,6 +505,16 @@ pandoc "$BUILD/processed.md" -t typst --template "$TEMPLATE_PATH" \
 # fonts — so output depends solely on the bundled fonts and your own font dir.
 FONT_PATHS=( --font-path "$ASSETS/fonts" )
 [[ -d "$CONFIG_HOME/fonts" ]] && FONT_PATHS+=( --font-path "$CONFIG_HOME/fonts" )
+# Deterministic PDF timestamp. Typst otherwise stamps the wall clock into the
+# PDF's /CreationDate + /ModDate, so re-rendering the same source produces a
+# byte-different file. Honor an externally-set SOURCE_DATE_EPOCH (the
+# reproducible-builds convention, handy in CI for identical output across
+# machines); otherwise pin it to the input's modification time, so re-rendering
+# the same .md is byte-identical. Typst reads SOURCE_DATE_EPOCH from the env.
+if [[ -z "${SOURCE_DATE_EPOCH:-}" ]]; then
+  SOURCE_DATE_EPOCH="$(python3 -c 'import os, sys; print(int(os.path.getmtime(sys.argv[1])))' "$IN")"
+fi
+export SOURCE_DATE_EPOCH
 typst compile "$BUILD/doc.typ" "$BUILD/out.pdf" --root "$BUILD" \
   "${FONT_PATHS[@]}" --ignore-system-fonts
 
