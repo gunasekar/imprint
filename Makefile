@@ -59,9 +59,16 @@ lint-md:
 
 ## Verify required tools are present
 check:
-	@for t in pandoc python3 typst; do \
-	  command -v $$t >/dev/null && echo "ok   $$t" || echo "MISS $$t (required)"; done
-	@command -v mmdc >/dev/null && echo "ok   mmdc" || echo "warn mmdc (needed for Mermaid diagrams)"
+	@if [ -n "$${SUDO_USER:-}" ]; then \
+	  for t in pandoc python3 typst; do \
+	    su - "$$SUDO_USER" -c "command -v $$t" >/dev/null 2>&1 && echo "ok   $$t" || echo "MISS $$t (required)"; \
+	  done; \
+	  su - "$$SUDO_USER" -c "command -v mmdc" >/dev/null 2>&1 && echo "ok   mmdc" || echo "warn mmdc (needed for Mermaid diagrams)"; \
+	else \
+	  for t in pandoc python3 typst; do \
+	    command -v $$t >/dev/null 2>&1 && echo "ok   $$t" || echo "MISS $$t (required)"; done; \
+	  command -v mmdc >/dev/null 2>&1 && echo "ok   mmdc" || echo "warn mmdc (needed for Mermaid diagrams)"; \
+	fi
 
 ## Render the bundled sample (metadata comes from its front matter)
 example:
