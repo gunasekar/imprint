@@ -88,6 +88,13 @@
 #let horizontalrule = align(center, block(above: 1.6em, below: 1.6em,
   line(length: 9%, stroke: (paint: accent, thickness: 1.4pt, cap: "round"))))
 
+// pandoc compatibility: older pandoc Typst writers emit `#blockquote[...]` for
+// block quotes, while newer ones emit `#quote(block: true)[...]`. Alias the former
+// to a real quote element so the callout `show` rule styles both — this keeps
+// imprint working on stock distro pandoc (e.g. Ubuntu 24.04's 3.1.3), not only the
+// latest release.
+#let blockquote(body) = quote(block: true, body)
+
 #show terms.item: it => block(breakable: false)[
   #text(weight: "bold")[#it.term]
   #block(inset: (left: 1.5em, top: -0.4em))[#it.description]

@@ -116,8 +116,9 @@ brew install mermaid-cli         # only if your docs use Mermaid (pulls in node)
 **Linux**
 
 ```bash
-# pandoc — distro packages are often older than the 3.x the Typst writer needs,
-# so install the latest .deb/.tar.gz from https://github.com/jgm/pandoc/releases
+# pandoc — any 3.0+ works, including current distro packages (e.g. Ubuntu 24.04's
+# 3.1). Only older distros ship pandoc 2.x (no Typst writer) — for those, grab a
+# 3.x .deb/.tar.gz from https://github.com/jgm/pandoc/releases
 cargo install --locked typst-cli           # typst (or a build from its GitHub releases)
 npm install -g @mermaid-js/mermaid-cli      # only if your docs use Mermaid
 ```
@@ -134,7 +135,7 @@ steps above inside your WSL distribution — everything works unchanged.
 
 | Tool | Needed for | Notes |
 |------|------|----------|
-| `pandoc` ≥ 3.0 | always | Markdown parsing (Typst writer needs 3.x) |
+| `pandoc` ≥ 3.0 | always | Markdown → Typst (writer added in 3.0; stock distro 3.x is fine) |
 | `typst` | always | single static binary; typesets the PDF |
 | `mmdc` | docs with Mermaid | uses headless Chromium under the hood |
 | `python3`, `bash` | always | stdlib only, no pip packages |
