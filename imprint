@@ -173,7 +173,7 @@ trap 'rm -rf "$BUILD"' EXIT
 #   <!-- pagebreak -->  -> Typst page break
 # Merged metadata is written to meta.kv for the bash side to finalize.
 python3 - "$IN" "$BUILD" "$KEEP_H1" "$CONFIG" <<'PY'
-import sys, re, subprocess, pathlib
+import sys, re, subprocess, pathlib, platform
 src, build, keep_h1, cfgpath = sys.argv[1], pathlib.Path(sys.argv[2]), sys.argv[3] == "1", sys.argv[4]
 
 def parse_flat(text):
@@ -331,6 +331,12 @@ text = re.sub(r'(?m)^[ \t]*<!--[ \t]*(?:pagebreak|newpage)[ \t]*-->[ \t]*$', lam
 mmcfg = build / "mermaid-config.json"
 font_body = meta.get("font_body", "Source Sans 3")
 mmcfg.write_text('{"htmlLabels":false,"fontFamily":"%s","flowchart":{"htmlLabels":false},"themeVariables":{"fontFamily":"%s"}}' % (font_body, font_body))
+# On Linux, Puppeteer (used by mmdc) requires --no-sandbox in most headless
+# environments (CI, Docker, VMs) where the kernel sandbox is unavailable.
+mmppcfg = None
+if platform.system() == "Linux":
+    mmppcfg = build / "puppeteer-config.json"
+    mmppcfg.write_text('{"args":["--no-sandbox","--disable-setuid-sandbox"]}')
 n = 0
 def render(match):
     global n
@@ -345,11 +351,15 @@ def render(match):
     mmd = build / f"mermaid-{n}.mmd"
     svg = build / f"mermaid-{n}.svg"
     mmd.write_text("\n".join(kept))
-    subprocess.run(
-        ["mmdc", "-i", str(mmd), "-o", str(svg), "-b", "white", "-t", "neutral",
-         "-c", str(mmcfg)],
-        check=True, capture_output=True,
-    )
+    cmd = ["mmdc", "-i", str(mmd), "-o", str(svg), "-b", "white", "-t", "neutral",
+           "-c", str(mmcfg)]
+    if mmppcfg:
+        cmd += ["-p", str(mmppcfg)]
+    try:
+        subprocess.run(cmd, check=True, capture_output=True)
+    except subprocess.CalledProcessError as e:
+        sys.stderr.write(e.stderr.decode(errors="replace"))
+        raise
     caparg = f"[{cap}]" if cap else "none"
     return f'\n```{{=typst}}\n#figure(image("mermaid-{n}.svg", width: 100%), caption: {caparg})\n```\n'
 
