@@ -254,13 +254,27 @@ if m:
     if not keep_h1:
         text = text[:m.start()] + text[m.end():]
 
+# imprint's document keys are Quarto's, so ONE source file renders in both tools:
+#   headerlogo  — Quarto reserves `logo` and coerces it to a boolean
+#   docdate     — Quarto parses `date` into a real date and reformats free text
+# The older `logo` and `date` are still accepted as aliases (`date` is the standard
+# Markdown key, and no existing document should break), but each folds into the
+# canonical, portable key here — before resolution — so the value is resolved and
+# emitted exactly once and never leaks raw through the passthrough. The canonical key
+# wins if a file sets both.
+for src_map in (cfg, fm):
+    for canonical, alias in (("headerlogo", "logo"), ("docdate", "date")):
+        if src_map.get(alias) and not src_map.get(canonical):
+            src_map[canonical] = src_map[alias]
+        src_map.pop(alias, None)
+
 # Merge: config contributes rendering settings + house-style defaults (theme,
 # fonts, toggles, and the logo — all reusable across documents); front matter
 # (document metadata + any per-doc overrides) layers on top. Document-specific
 # fields — title, author, footer_text, recipient, ... — never come from config.
 PDF_CONFIG_KEYS = ("accent", "font_body", "font_head", "font_mono", "cover",
                    "cover_style", "confidential", "toc", "numbered", "lang",
-                   "code_font_size", "logo", "logo_dark_bg", "logo_height",
+                   "code_font_size", "headerlogo", "logo_dark_bg", "logo_height",
                    "template", "diagram_theme")
 merged = {k: cfg[k] for k in PDF_CONFIG_KEYS if cfg.get(k) not in (None, "")}
 merged.update(fm)
@@ -291,9 +305,9 @@ def resolve_asset(key):
         return None
     p = pathlib.Path(val)
     return str(p if p.is_absolute() else base / p)
-# logo/logo_dark_bg are image assets; `template` is a .typ path resolved the
+# headerlogo/logo_dark_bg are image assets; `template` is a .typ path resolved the
 # same way (next to the config for a config value, next to the .md for front matter).
-for key in ("logo", "logo_dark_bg", "template"):
+for key in ("headerlogo", "logo_dark_bg", "template"):
     resolved = resolve_asset(key)
     if resolved:
         merged[key] = resolved
@@ -301,9 +315,9 @@ for key in ("logo", "logo_dark_bg", "template"):
         merged.pop(key, None)
 
 # Emit recognized keys to meta.kv (bash applies CLI overrides + defaults on top).
-KEYS = ("title", "subtitle", "description", "author", "date", "recipient",
+KEYS = ("title", "subtitle", "description", "author", "docdate", "recipient",
         "category", "cover", "cover_style", "confidential", "toc", "numbered",
-        "lang", "code_font_size", "accent", "logo",
+        "lang", "code_font_size", "accent", "headerlogo",
         "logo_dark_bg", "font_body", "font_head", "font_mono", "footer_text",
         "logo_height", "template")
 meta = {k: merged[k] for k in KEYS if merged.get(k) not in (None, "")}
@@ -491,9 +505,9 @@ PY
 
 # ---- merge metadata: CLI flag > front matter > config > built-in default ----
 FM_title=""; FM_subtitle=""; FM_description=""; FM_author=""
-FM_recipient=""; FM_date=""; FM_cover=""; FM_cover_style=""; FM_confidential=""; FM_category=""
+FM_recipient=""; FM_docdate=""; FM_cover=""; FM_cover_style=""; FM_confidential=""; FM_category=""
 FM_toc=""; FM_numbered=""; FM_lang=""; FM_code_font_size=""
-FM_accent=""; FM_logo=""; FM_logo_dark_bg=""; FM_font_body=""; FM_font_head=""; FM_font_mono=""; FM_footer_text=""; FM_logo_height=""; FM_template=""
+FM_accent=""; FM_headerlogo=""; FM_logo_dark_bg=""; FM_font_body=""; FM_font_head=""; FM_font_mono=""; FM_footer_text=""; FM_logo_height=""; FM_template=""
 if [[ -f "$BUILD/meta.kv" ]]; then
   while IFS='=' read -r k v; do
     case "$k" in
@@ -502,7 +516,7 @@ if [[ -f "$BUILD/meta.kv" ]]; then
       description)  FM_description="$v";;
       author)       FM_author="$v";;
       recipient)    FM_recipient="$v";;
-      date)         FM_date="$v";;
+      docdate)      FM_docdate="$v";;
       cover)        FM_cover="$v";;
       cover_style)  FM_cover_style="$v";;
       confidential) FM_confidential="$v";;
@@ -512,7 +526,7 @@ if [[ -f "$BUILD/meta.kv" ]]; then
       code_font_size) FM_code_font_size="$v";;
       category)     FM_category="$v";;
       accent)       FM_accent="$v";;
-      logo)         FM_logo="$v";;
+      headerlogo)   FM_headerlogo="$v";;
       logo_dark_bg)   FM_logo_dark_bg="$v";;
       logo_height)  FM_logo_height="$v";;
       font_body)    FM_font_body="$v";;
@@ -529,7 +543,7 @@ SUBTITLE="${SUBTITLE:-${FM_subtitle}}"
 DESC="${DESC:-${FM_description}}"
 AUTHOR="${AUTHOR:-${FM_author}}"
 RECIPIENT="${RECIPIENT:-${FM_recipient}}"
-DATE="${DATE:-${FM_date}}"
+DATE="${DATE:-${FM_docdate}}"
 CATEGORY="${CATEGORY:-${FM_category}}"
 ACCENT="${ACCENT:-${FM_accent}}"
 
@@ -560,12 +574,14 @@ if [[ -z "$COVER" ]]; then truthy "$FM_cover" && COVER=1 || COVER=0; fi
 # Build pandoc args incrementally (avoids empty-array expansion under bash 3.2 set -u).
 COMMON=( -V title="$TITLE" )
 [[ -n "$AUTHOR"      ]] && COMMON+=(-M author="$AUTHOR")
-[[ -n "$DATE"       ]] && COMMON+=(-V date="$DATE")
+[[ -n "$DATE"       ]] && COMMON+=(-V docdate="$DATE")
 [[ -n "$SUBTITLE"   ]] && COMMON+=(-V subtitle="$SUBTITLE")
 [[ -n "$DESC"       ]] && COMMON+=(-V description="$DESC")
 [[ -n "$RECIPIENT"  ]] && COMMON+=(-V recipient="$RECIPIENT")
 [[ -n "$CATEGORY"   ]] && COMMON+=(-V category="$CATEGORY")
-[[ -n "$ACCENT"     ]] && COMMON+=(-V accent="$ACCENT")
+# Bare hex, no '#': pandoc escapes a literal '#' to '\#', which Typst rejects inside
+# rgb(). The template writes the '#' itself — see typst-template.typ's accent token.
+[[ -n "$ACCENT"     ]] && COMMON+=(-V accent="${ACCENT#\#}")
 [[ -n "$FOOTER_TEXT" ]] && COMMON+=(-V footer_text="$FOOTER_TEXT")
 [[ -n "$FM_font_body" ]] && COMMON+=(-V font_body="$FM_font_body")
 [[ -n "$FM_font_head" ]] && COMMON+=(-V font_head="$FM_font_head")
@@ -595,10 +611,10 @@ copy_logo() {
     COMMON+=(-V "$var=$base.${path##*.}")
   fi
 }
-LOGO="${LOGO_CLI:-${FM_logo}}"
+LOGO="${LOGO_CLI:-${FM_headerlogo}}"
 LOGO_DARK_BG="${LOGO_DARK_BG_CLI:-${FM_logo_dark_bg}}"
 if [[ "$NO_LOGO" == "1" ]]; then LOGO=""; LOGO_DARK_BG=""; fi
-copy_logo "$LOGO" logo logo
+copy_logo "$LOGO" logo headerlogo
 # A light logo for the gradient cover; only used there (see the template).
 copy_logo "$LOGO_DARK_BG" logo-dark-bg logo_dark_bg
 

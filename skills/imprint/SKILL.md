@@ -39,7 +39,8 @@ the guidance for the common ones:
   back to `author` when unset. Often a product or team name.
 - `category` — the document's function area (e.g. `Engineering`, `Documentation`).
   Shown as a cover eyebrow and added to the PDF keywords. Omit if unclear.
-- `date` — only if the document states one; otherwise omit.
+- `docdate` — free-form date (e.g. `June 2026`), only if the document states one;
+  otherwise omit. The key is `docdate`, not `date` (which Quarto reserves).
 - `recipient` — who the doc is "Prepared for" (only meaningful with a cover).
 - `cover` — `true` only if the user wants a title page; defaults to `false`.
 - `cover_style` — `gradient` for the bolder accent-wash cover (also set `cover: true`;

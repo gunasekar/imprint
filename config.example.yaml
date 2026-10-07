@@ -41,8 +41,9 @@ font_mono:     "JetBrains Mono"
 # and appears on the cover and in the running header of every PDF. A path is
 # resolved relative to THIS config file (so keep the asset next to your config, or
 # use an absolute path). A document overrides it in front matter (resolved relative
-# to the .md), drops it with `logo: none`, or pass --no-logo for one run.
-# logo:   "logo.svg"           # cover + running-header mark
+# to the .md), drops it with `headerlogo: none`, or pass --no-logo for one run.
+# The key is `headerlogo` (not `logo`, which Quarto reserves); `logo` still works.
+# headerlogo:   "logo.svg"           # cover + running-header mark
 # logo_dark_bg: "logo-dark-bg.svg"   # logo for a dark background; used only on the gradient cover
 # logo_height:  40                   # cover logo height, in pt
 

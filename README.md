@@ -169,15 +169,15 @@ defaults).
 accent:     "#2563EB"          # the single theme color
 font_body:  "Source Sans 3"    # body + heading font — "Source Sans 3" or "IBM Plex Sans"
 font_mono:  "JetBrains Mono"   # code font
-logo:       "logo.svg"         # your brand mark — resolved relative to this config file
+headerlogo: "logo.svg"         # your brand mark — resolved relative to this config file
 cover:      false              # title page off by default
 ```
 
-A config `logo` path is resolved relative to **the config file** (keep the asset
-beside it, or use an absolute path). Document-specific metadata — title, author,
-footer text, recipient, … — does **not** go here; it lives in each document's
-front matter (next section), which is also where you override or drop the logo
-for one document (`logo: none`).
+A config `headerlogo` path is resolved relative to **the config file** (keep the
+asset beside it, or use an absolute path). Document-specific metadata — title,
+author, footer text, recipient, … — does **not** go here; it lives in each
+document's front matter (next section), which is also where you override or drop
+the logo for one document (`headerlogo: none`).
 
 ### Multiple house styles (profiles)
 
@@ -225,9 +225,9 @@ description: "How the platform ingests, validates, and routes events."
 author: "Jane Doe"
 footer_text: "Jane Doe"
 category: "Engineering"
-date: "June 2026"
+docdate: "June 2026"
 recipient: "Acme Corp"
-logo: "logo.png"
+headerlogo: "logo.png"
 logo_height: 52
 cover: true
 confidential: false
@@ -256,9 +256,9 @@ per document.
 | `author` / `--author` | — | "Prepared by" on the cover; also the PDF author |
 | `footer_text` / `--footer-text` | falls back to `author` | Free text, bottom-left of every page |
 | `recipient` / `--recipient` | — | "Prepared for" on the cover |
-| `date` / `--date` | — | Free-form date string (e.g. `June 2026`) |
+| `docdate` / `--date` | — | Free-form date string (e.g. `June 2026`, `Q3 FY26`). Named `docdate`, not `date`: Quarto reserves `date` and reformats it. CLI still accepts `date` as a backward-compat alias; Quarto documents must use `docdate` |
 | `category` / `--category` | — | Cover eyebrow + PDF keyword |
-| `logo` / `--logo` / `--no-logo` | — (config) | Logo on the cover and running header. A config path resolves relative to the config file, a front-matter path relative to the `.md`; `logo: none` or `--no-logo` drops it |
+| `headerlogo` / `--logo` / `--no-logo` | — (config) | Logo on the cover and running header. A config path resolves relative to the config file, a front-matter path relative to the `.md`; `headerlogo: none` or `--no-logo` drops it. Named `headerlogo`, not `logo`: Quarto reserves `logo`. CLI still accepts `logo` as a backward-compat alias; Quarto documents must use `headerlogo` |
 | `logo_dark_bg` / `--logo-dark-bg` | — (config) | Logo for a dark background, used only on the **gradient** cover (the dark `logo` would vanish on the wash) |
 | `logo_height` / `--logo-height` | `40` (config) | Cover logo height in pt (the running-header logo is always 2× the title text) |
 | `accent` / `--accent` | `#2563EB` (config) | Theme color (any hex) |
@@ -277,13 +277,14 @@ per document.
 The bundled `default.typ` covers most documents, but you can point imprint at your
 own Typst template — per document (`template:` / `--template`) or as a house-style
 default in a config or profile. A config-level `template:` resolves next to the
-config file (like `logo:`), so a profile can ship its own layout beside its assets:
+config file (like `headerlogo:`), so a profile can ship its own layout beside its
+assets:
 
 ```yaml
 # ~/.config/imprint/profiles/acme.yaml
-accent:   "#B91C1C"
-logo:     "acme.svg"
-template: "acme.typ"     # resolved next to this profile
+accent:     "#B91C1C"
+headerlogo: "acme.svg"
+template:   "acme.typ"     # resolved next to this profile
 ```
 
 A custom template receives **every key in the table above** as a variable, plus a
@@ -293,12 +294,12 @@ name. So a new field needs no change to imprint itself — just author the templ
 and set the field:
 
 ```markdown
-<!--
+---
 title: "Master Services Agreement"
 template: "contract.typ"
 version: "2.1"          # not a built-in key — passed straight to the template
 effective_date: "2026-07-01"
--->
+---
 ```
 
 In the template, read them like any pandoc variable: `$version$`, `$effective_date$`.
@@ -329,6 +330,11 @@ constructs are restyled:
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the pipeline, the Typst
 back-end, and the design tokens. Design rationale lives in
 [`docs/decisions/`](docs/decisions/).
+
+The CLI and the Quarto extension render from **one** template: `templates/*.typ` are
+the source, and `quarto/_extensions/imprint/` ships byte-identical copies (`make
+quarto-sync` refreshes them, CI fails if they drift). See
+[ADR 0008](docs/decisions/0008-quarto-format-extension.md).
 
 ## License
 

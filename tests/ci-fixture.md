@@ -3,6 +3,8 @@ title:        "imprint CI smoke test"
 subtitle:     "A render that must always succeed"
 description:  "A minimal document that exercises the pandoc -> typst render path without Mermaid, so CI stays deterministic and headless-Chromium-free."
 author:       "CI"
+# `date`, not `docdate`, on purpose: the canonical key is `docdate`, but `date` is
+# kept as a backward-compat alias. Using it here makes CI cover the alias path too.
 date:         "2026"
 category:     "Test"
 footer_text:  "imprint CI"

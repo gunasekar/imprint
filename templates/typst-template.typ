@@ -6,7 +6,10 @@
 // ---------------- theme tokens ----------------
 // Accent: a single configurable color (default a technical blue). Light/dark shades are
 // derived from it, so changing `accent` in config re-tints the whole document.
-#let accent      = rgb("$if(accent)$$accent$$else$#2563EB$endif$")
+// The '#' is written by the template, not supplied with the value: pandoc escapes a
+// literal '#' in a metadata value to '\#', which Typst rejects inside rgb(). So both
+// callers pass a bare hex (imprint strips a leading '#'; the Quarto filter does too).
+#let accent      = rgb("#$if(accent)$$accent$$else$2563EB$endif$")
 #let accent-dark = accent.darken(22%)
 #let accent-soft = accent.lighten(90%)   // callout / table-head tint
 #let accent-bright = accent.lighten(28%) // lifted accent for highlights on the dark gradient cover
@@ -23,10 +26,14 @@
 #let body-font = "$if(font_body)$$font_body$$else$Source Sans 3$endif$"
 #let head-font = "$if(font_head)$$font_head$$else$Source Sans 3$endif$"
 #let mono-font = "$if(font_mono)$$font_mono$$else$JetBrains Mono$endif$"
-#let logo-path = $if(logo)$"$logo$"$else$none$endif$
+// `headerlogo` before `logo` because Quarto reserves `logo` and coerces it to a
+// boolean. Both the CLI and Quarto emit `headerlogo` (the CLI still accepts `logo`
+// as an alias and folds it before emission). The `logo` fallback covers a custom
+// template or older caller that still sets the alias as a pandoc variable.
+#let logo-path = $if(headerlogo)$"$headerlogo$"$else$$if(logo)$"$logo$"$else$none$endif$$endif$
 // A light logo for the dark gradient cover (logo_dark_bg / --logo-dark-bg). The dark
-// `logo` would vanish on the wash, so the gradient cover uses this when set and
-// otherwise shows no cover logo. Body-page headers always use the normal `logo`.
+// header logo would vanish on the wash, so the gradient cover uses this when set and
+// otherwise shows no cover logo. Body-page headers always use the normal header logo.
 #let logo-dark-bg-path = $if(logo_dark_bg)$"$logo_dark_bg$"$else$none$endif$
 // Running header/footer text size. The header logo derives from this — it is set
 // to twice the title text so the logo and title read as a balanced pair on one line.

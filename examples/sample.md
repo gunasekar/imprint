@@ -9,7 +9,7 @@ subtitle:       "v2 — At-least-once delivery with retries"
 description:    "How Switchboard accepts internal events and delivers them as signed webhooks to subscriber endpoints — with retries, exponential backoff, and a dead-letter queue."
 author:         "Platform Team"
 footer_text:    "Switchboard"
-date:        "June 2026"
+docdate:        "June 2026"
 category:       "Engineering"
 cover:          true
 cover_style:    gradient
