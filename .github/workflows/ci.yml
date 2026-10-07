@@ -29,6 +29,39 @@ jobs:
       - name: Lint Markdown
         run: npx --yes markdownlint-cli2
 
+  quarto:
+    name: Quarto extension
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # The extension ships byte-identical copies of templates/*.typ and assets/fonts
+      # (quarto add installs _extensions/imprint/ and nothing outside it). If someone
+      # edits the template and forgets `make quarto-sync`, the CLI and the Quarto
+      # format would drift apart silently — so fail here instead.
+      - name: Assert the extension has not drifted from its sources
+        run: make quarto-check
+
+      # Quarto bundles its own pandoc and Typst, so this job needs no other toolchain.
+      - uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Show toolchain
+        run: quarto --version
+
+      # Like the CLI fixture, this one avoids Mermaid: Quarto renders Mermaid through
+      # headless Chromium, which we do not want to install just to smoke-test the
+      # format. Everything else the format touches is covered.
+      - name: Render the Quarto fixture
+        run: make quarto-fixture
+
+      - name: Upload the rendered PDF
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: quarto-fixture-pdf
+          path: .tmp/quarto-ci/quarto-fixture.pdf
+          if-no-files-found: ignore
+
   render:
     name: Render smoke test
     runs-on: ubuntu-latest

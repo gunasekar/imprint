@@ -43,9 +43,13 @@ may override the render defaults; CLI flags override everything. An inline pytho
 preprocessor
 copies local images into a build dir, pre-renders Mermaid blocks to SVG, and
 rewrites native constructs (page breaks); the wrapper resolves and copies any
-document logo. Then pandoc → Typst typesets the PDF against one template,
-`templates/default.typ`. Fonts are vendored in `assets/fonts/` and embedded by
+document logo. Then pandoc → Typst typesets the PDF against one template in
+`templates/`. Fonts are vendored in `assets/fonts/` and embedded by
 Typst, so output is self-contained and reproducible.
+
+The same template also ships as a Quarto format extension
+(`quarto/_extensions/imprint/`), so a Quarto user gets imprint's look with
+`format: imprint-typst`. See [ADR 0008](docs/decisions/0008-quarto-format-extension.md).
 
 The source `.md` stays pure Markdown — imprint never mutates it; all rewrites
 happen on a build copy.
@@ -60,8 +64,12 @@ happen on a build copy.
   way — the repo is meant to be public.
 - **Deterministic render path** — no network calls, no time-dependent defaults.
   Optional values are omitted when unset, never filled.
-- **One template.** Theme changes go in `templates/default.typ`; the accent is a
+- **One template, two products.** Theme changes go in `templates/typst-template.typ`
+  (the look) or `templates/typst-show.typ` (metadata → `conf()`); the accent is a
   single token derived into light/dark shades, so most re-theming is one value.
+  The Quarto extension ships byte-identical copies of those two files — run
+  `make quarto-sync` after touching either, or CI's `make quarto-check` will fail.
+  Never hand-edit the copies under `quarto/_extensions/imprint/`.
 - Record non-trivial design changes as an ADR in `docs/decisions/`, and mark the
   superseded one's Status rather than rewriting it.
 

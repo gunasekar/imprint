@@ -113,9 +113,23 @@ dir is a `mktemp -d` cleaned up on exit.
 
 ## The template
 
-`templates/default.typ` is the single source of layout truth. It is a pandoc
-Typst template — `$if(...)$ / $for(...)$` placeholders are filled by pandoc, then
-the rest is plain Typst. Structure:
+`templates/` is the single source of layout truth, for the CLI *and* for the Quarto
+extension. It is a pandoc Typst template — `$if(...)$ / $for(...)$` placeholders are
+filled by pandoc, then the rest is plain Typst. It is split in three:
+
+| File | What it is |
+|---|---|
+| `typst-template.typ` | Theme tokens + the `conf()` layout function — **the look** |
+| `typst-show.typ` | Document metadata → the `conf(...)` call |
+| `default.typ` | The CLI's main template: the two partials above, plus `$body$` |
+
+The split is not arbitrary: Quarto assembles its own Typst output from pandoc partials
+named exactly `typst-template.typ` and `typst-show.typ`, so cutting the template there
+lets the Quarto extension and the CLI read the same two files. The extension ships
+byte-identical copies of them (`make quarto-sync`; CI runs `make quarto-check` to fail
+on drift) — see [ADR 0008](decisions/0008-quarto-format-extension.md).
+
+Structure of `typst-template.typ`:
 
 - **Theme tokens** at the top. The accent is one configurable color; `accent-dark`,
   `accent-soft`, and `accent-bright` are *derived* from it via `.darken()` /
@@ -130,8 +144,9 @@ the rest is plain Typst. Structure:
   proof — see [ADR 0004](decisions/0004-optional-gradient-cover.md). With no
   cover, the first body page opens with a **masthead** (title, subtitle,
   description) and the running header begins on page 2.
-- **`#show: doc => conf(...)`** wires the pandoc-filled metadata into `conf` and
-  renders `$body$`.
+`typst-show.typ` then wires the pandoc-filled metadata into `conf` via
+`#show: doc => conf(...)`. The CLI's `default.typ` includes both partials and
+emits `$body$`; Quarto assembles the same two partials itself.
 
 ### Design tokens
 
@@ -164,12 +179,16 @@ and produces reproducible output — which is the entire point of imprint.
 ## Repo layout
 
 ```
-imprint                   # the bash driver (the whole CLI)
-templates/default.typ     # the one layout template
-assets/fonts/             # bundled TTFs, embedded by Typst
-config.example.yaml       # committed placeholder config
-config.yaml               # your personal config (gitignored)
-skills/imprint/SKILL.md   # optional Claude Code /imprint skill
-examples/sample.md        # the bundled demo document
-docs/                     # this file + decision records
+imprint                        # the bash driver (the whole CLI)
+templates/typst-template.typ   # the look: theme tokens + conf()   ─┐ shared with
+templates/typst-show.typ       # metadata -> conf(...)             ─┘ the Quarto ext
+templates/default.typ          # the CLI's main template (partials + $body$)
+quarto/_extensions/imprint/    # the Quarto format (byte-identical copies + Lua)
+assets/fonts/                  # bundled TTFs, embedded by Typst
+config.example.yaml            # committed placeholder config
+config.yaml                    # your personal config (gitignored)
+skills/imprint/SKILL.md        # optional Claude Code /imprint skill
+examples/sample.md             # the bundled demo document
+quarto/example.qmd             # the same, as a Quarto document
+docs/                          # this file + decision records
 ```

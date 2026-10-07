@@ -1,0 +1,47 @@
+title: imprint
+author: Gunasekaran Namachivayam
+version: 0.1.0
+quarto-required: ">=1.4.0"
+contributes:
+  formats:
+    typst:
+      # imprint's look, shipped as Quarto's two Typst partials. Both files are
+      # byte-identical copies of templates/*.typ in the imprint repo — `make
+      # quarto-sync` refreshes them and CI fails if they drift. Edit the originals.
+      template-partials:
+        - typst-template.typ
+        - typst-show.typ
+      # Strips the duplicate leading H1, normalizes `accent`, and sizes/frames the
+      # diagrams Quarto renders. See imprint.lua for why each is needed.
+      filters:
+        - imprint.lua
+      # imprint's typography, bundled: the format is self-contained — no system font
+      # install, no network fetch. Synced from assets/fonts by `make quarto-sync`.
+      #
+      # The leading '/' is load-bearing: it means project-root-relative, and an
+      # extension always installs to <root>/_extensions/imprint/. Without it the path
+      # resolves against the *document's* directory, so a document in a subfolder
+      # misses the fonts and Typst quietly falls back to a system face — an off-brand
+      # PDF that still renders, which is worse than a hard failure.
+      font-paths:
+        - /_extensions/imprint/fonts
+      # Let Typst highlight code, not pandoc. Quarto otherwise emits a fenced block as
+      # pandoc's `#Skylighting(...)`, whose tokens are *inline* `raw()` elements — so
+      # the template's inline-code rule chips every token and its block rule never
+      # fires, and a code block renders as a row of little grey pills. With
+      # highlighting off, pandoc emits a native Typst raw block, which is what the CLI
+      # feeds Typst and what the template's `show raw.where(block: true)` expects.
+      # Typst then colors the code itself, so nothing is lost.
+      highlight-style: none
+      # Quarto-only Typst overrides, injected after Quarto's own definitions.typ so
+      # they win over it. Keeps Quarto-specific fixes out of the shared template.
+      include-in-header:
+        - imprint-quarto.typ
+      papersize: a4
+      toc: false
+      # Computational figures default to the text-column width. Mermaid ignores this
+      # (it renders at natural size), which is what imprint.lua exists to fix.
+      fig-width: 5.5
+      # imprint's diagrams are grey, not Quarto's default lavender.
+      mermaid:
+        theme: neutral

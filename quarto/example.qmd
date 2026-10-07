@@ -1,0 +1,69 @@
+---
+title: "Switchboard — Webhook Delivery Service"
+subtitle: "v2 — at-least-once delivery with retries"
+description: "How Switchboard accepts internal events and delivers them as signed webhooks to subscriber endpoints — with retries, exponential backoff, and a dead-letter queue."
+author: "Platform Team"
+# `docdate`, not `date`: Quarto parses `date` into a real date and reformats it.
+# imprint's dates are free text, and `docdate` reaches the cover verbatim.
+docdate: "June 2026"
+category: "Engineering"
+footer_text: "Switchboard"
+accent: "#2563EB"
+cover: true
+cover_style: "gradient"
+confidential: true
+# `headerlogo`, not `logo`: Quarto reserves `logo` and coerces it to a boolean.
+headerlogo: "logo.svg"
+# The dark cover logo — the normal logo would vanish on the gradient wash.
+logo_dark_bg: "logo-dark-bg.svg"
+format:
+  imprint-typst: default
+---
+
+# Switchboard — Webhook Delivery Service
+
+> **Purpose.** Switchboard turns internal domain events into outbound **webhooks**:
+> a team publishes an event once, and Switchboard delivers it as a signed HTTP
+> request to every endpoint subscribed to that event type.
+
+**Scope:** v2 only — the queue-backed delivery workers. The legacy v1 synchronous
+path is out of scope.
+
+## 1. Architecture
+
+An event is accepted, queued, and delivered by a worker pool. Nothing is delivered
+in the publisher's request path, so a slow subscriber can never slow a publisher.
+
+```{mermaid}
+flowchart LR
+  A[Internal services] -->|publish| B[Ingest API]
+  B --> Q[(events queue)]
+  Q --> W[Delivery workers]
+  W -->|signed POST| S[Subscriber endpoints]
+  W -.retry.-> R[(retry queue)]
+  R -.exhausted.-> D[(dead letter)]
+```
+
+## 2. Delivery guarantees
+
+| Guarantee | What it means | Where it is enforced |
+|-----------|---------------|----------------------|
+| At least once | Every accepted event is delivered one or more times | Retry queue |
+| Ordered per subscriber | Events for one endpoint keep publish order | Partition key |
+| Signed | Each request carries an HMAC of its body | Delivery worker |
+
+> **Note.** At-least-once means a subscriber **can** see a duplicate. Endpoints must
+> be idempotent — key on the `Event-Id` header.
+
+## 3. Retry policy
+
+Failures back off exponentially, then land in the dead-letter queue.
+
+- [x] Exponential backoff, jittered
+- [x] Dead-letter after 12 attempts
+- [ ] Per-subscriber circuit breaker
+
+```sh
+# replay a dead-lettered event
+switchboard replay --event 01J9Z8...
+```

@@ -325,6 +325,59 @@ constructs are restyled:
 - **Table widths.** Every table spans the full page width; the *ratio* of dashes
   in the separator row sets how that width splits between columns.
 
+## Use it from Quarto
+
+Already writing in Quarto? Take the look without the CLI. imprint ships as a Quarto
+**format extension**, rendering from the same Typst template:
+
+```sh
+quarto add gunasekar/imprint/quarto
+```
+
+Then name the format:
+
+```yaml
+---
+title: "Quarterly Platform Review"
+subtitle: "Managed-Kafka rollout"
+author: "Platform Team"
+docdate: "June 2026"
+category: "Engineering"
+footer_text: "Acme"
+accent: "#2563EB"
+cover: true
+cover_style: "gradient"
+confidential: true
+headerlogo: "logo.svg"
+logo_dark_bg: "logo-dark-bg.svg"
+format:
+  imprint-typst: default
+---
+```
+
+```sh
+quarto render report.qmd --to imprint-typst
+```
+
+You get the cover, the masthead, the running header/footer, the callouts, the themed
+tables, and the accent — the parts a `_brand.yml` alone cannot give you. Fonts are
+bundled with the extension, so there is nothing to install and nothing to fetch.
+
+**The keys are the same as the CLI** — `headerlogo`, `docdate`, `accent`, `cover`,
+`cover_style`, `confidential`, `category`, `footer_text`, `toc`, `numbered`, and the
+rest are spelled identically, because imprint deliberately uses the two names Quarto
+does *not* reserve (`headerlogo`, `docdate`) rather than the ones it does (`logo`,
+`date`). So a single front-matter block renders in both tools. The only CLI-only
+concept is `--profile` (house-style presets); in Quarto, put shared keys in
+`_quarto.yml` instead.
+
+A full, renderable example is in [`quarto/example.qmd`](quarto/example.qmd).
+
+> **Note.** If you write `date: "Q3 FY26"`, the render stops and tells you to use
+> `docdate:`. That is deliberate: Quarto renders a date it cannot parse as the literal
+> text *"Invalid Date"*, on the cover, and a build that fails is better than a document
+> that ships saying that.
+
 ## How it works
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the pipeline, the Typst

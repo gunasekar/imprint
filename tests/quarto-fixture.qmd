@@ -1,0 +1,52 @@
+---
+title: "imprint Quarto CI smoke test"
+subtitle: "A render that must always succeed"
+description: "The Quarto twin of ci-fixture.md — exercises the imprint-typst format without Mermaid, so CI needs no headless Chromium."
+author: "CI"
+# `docdate` is the canonical key — it reaches the cover verbatim. Quarto would
+# reformat a bare `date`, and the CLI's ci-fixture.md covers the `date` alias.
+docdate: "2026"
+category: "Test"
+footer_text: "imprint CI"
+cover: true
+# With its '#': the Lua filter strips it before the template writes its own. The CLI
+# strips it too. If either regressed, Typst would fail on rgb("##2563EB").
+accent: "#2563EB"
+# `headerlogo`, not `logo` — Quarto reserves `logo` and coerces it to a boolean.
+headerlogo: "logo.svg"
+font_head: "IBM Plex Sans"
+format:
+  imprint-typst: default
+---
+
+# Render smoke test
+
+This fixture deliberately avoids Mermaid so the render needs only Quarto, pandoc,
+and Typst — no headless browser. It still covers the constructs imprint restyles,
+so a regression in the shared template or the Lua filter fails CI.
+
+The H1 above duplicates the title. imprint's filter drops it; if that regressed,
+the title would render twice.
+
+> **Note.** A block quote becomes a tinted callout, and a bold `**Label.**` lead
+> gives it a colored label.
+
+## Tables
+
+| Setting | Where | What it does |
+|--------|--------|-------------------------------------------------|
+| `accent` | front matter | The single theme color for links, rules, headers |
+| `cover` | front matter | Whether the title page renders |
+
+## A task list
+
+- [x] Front matter parsed
+- [ ] Not done yet
+
+## Code
+
+Inline `quarto render doc.qmd` and a fenced block:
+
+```sh
+quarto render report.qmd --to imprint-typst
+```

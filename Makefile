@@ -4,7 +4,15 @@ BINDIR := $(PREFIX)/bin
 # Where Claude Code looks for user skills (override with SKILLDIR=...).
 SKILLDIR ?= $(HOME)/.claude/skills
 
-.PHONY: install uninstall skill uninstall-skill check lint-md example config profile preview showcase
+.PHONY: install uninstall skill uninstall-skill check lint-md example readme config profile preview showcase \
+        quarto-sync quarto-check quarto-fixture quarto-example
+
+# The Quarto format extension. It renders from the same template as the CLI, but
+# `quarto add` installs _extensions/imprint/ and nothing outside it, so the shared
+# files have to physically live inside the extension. They are byte-identical copies,
+# refreshed by `quarto-sync` and policed by `quarto-check` — not symlinks, because
+# Quarto copies a symlink as a symlink and it dangles on the user's machine.
+QUARTO_EXT := quarto/_extensions/imprint
 
 ## Symlink imprint onto your PATH (override with PREFIX=~/.local)
 install:
@@ -53,6 +61,39 @@ uninstall-skill:
 	@rm -f "$(SKILLDIR)/imprint"
 	@echo "removed $(SKILLDIR)/imprint"
 
+## Refresh the Quarto extension's copies of the shared template and fonts
+quarto-sync:
+	@cp templates/typst-template.typ templates/typst-show.typ "$(QUARTO_EXT)/"
+	@rm -rf "$(QUARTO_EXT)/fonts"
+	@mkdir -p "$(QUARTO_EXT)/fonts"
+	@cp -R assets/fonts/. "$(QUARTO_EXT)/fonts/"
+	@echo "synced $(QUARTO_EXT) <- templates/{typst-template,typst-show}.typ + assets/fonts/"
+
+## Fail if the extension's copies have drifted from their sources (CI runs this)
+quarto-check:
+	@cmp -s templates/typst-template.typ "$(QUARTO_EXT)/typst-template.typ" \
+	  && cmp -s templates/typst-show.typ "$(QUARTO_EXT)/typst-show.typ" \
+	  && diff -rq assets/fonts "$(QUARTO_EXT)/fonts" >/dev/null \
+	  || { echo "stale: the Quarto extension has drifted from its sources — run 'make quarto-sync'"; exit 1; }
+	@echo "ok   quarto extension is in sync with templates/ and assets/fonts/"
+
+## Render the Mermaid-free Quarto fixture (what CI runs; needs quarto)
+quarto-fixture:
+	@rm -rf .tmp/quarto-ci && mkdir -p .tmp/quarto-ci/_extensions
+	@cp -R "$(QUARTO_EXT)" .tmp/quarto-ci/_extensions/
+	@cp tests/quarto-fixture.qmd examples/logo.svg .tmp/quarto-ci/
+	cd .tmp/quarto-ci && quarto render quarto-fixture.qmd --to imprint-typst
+	@test -s .tmp/quarto-ci/quarto-fixture.pdf
+	@head -c4 .tmp/quarto-ci/quarto-fixture.pdf | grep -q '%PDF'
+	@echo "ok   rendered $$(wc -c < .tmp/quarto-ci/quarto-fixture.pdf | tr -d ' ') bytes"
+
+## Render quarto/example.qmd in place (needs quarto, and Chromium for its Mermaid
+## block). quarto/ is a working Quarto project — the extension sits in its _extensions,
+## so the example renders against it with no staging.
+quarto-example:
+	cd quarto && quarto render example.qmd --to imprint-typst
+	@echo "wrote quarto/example.pdf"
+
 ## Lint the Markdown docs (rules + globs in .markdownlint-cli2.yaml; needs node/npx)
 lint-md:
 	npx --yes markdownlint-cli2
@@ -69,6 +110,16 @@ check:
 	    command -v $$t >/dev/null 2>&1 && echo "ok   $$t" || echo "MISS $$t (required)"; done; \
 	  command -v mmdc >/dev/null 2>&1 && echo "ok   mmdc" || echo "warn mmdc (needed for Mermaid diagrams)"; \
 	fi
+
+## Render this README to README.pdf. Its metadata comes from flags, not front matter:
+## a YAML fence would render as a metadata table at the top of the GitHub landing
+## page, and the README is read on github.com far more often than it is typeset.
+readme:
+	./imprint README.md -o README.pdf \
+	  --title "imprint" \
+	  --subtitle "Branded, typeset documents from Markdown" \
+	  --desc "Turn a Markdown file into a branded, typeset PDF — cover page, running header and footer, and a reusable house style — with one command." \
+	  --category "Documentation"
 
 ## Render the bundled sample (metadata comes from its front matter)
 example:

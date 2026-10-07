@@ -30,3 +30,8 @@ __pycache__/
 
 # Scratch working copies
 .tmp/
+
+# Quarto build output. quarto/ is a working project (the extension renders
+# quarto/example.qmd in place), so its render artifacts land here.
+.quarto/
+/quarto/example_files/
