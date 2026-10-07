@@ -174,11 +174,11 @@ trap 'rm -rf "$BUILD"' EXIT
 #   ```mermaid blocks  -> SVG figure (optional `%% caption:` line -> caption)
 #   <!-- pagebreak -->  -> Typst page break
 # Merged metadata is written to meta.kv for the bash side to finalize.
-python3 - "$IN" "$BUILD" "$KEEP_H1" "$CONFIG" "$ACCENT" "$DIAGRAM_THEME" "$TEMPLATES/default.typ" <<'PY'
+python3 - "$IN" "$BUILD" "$KEEP_H1" "$CONFIG" "$ACCENT" "$DIAGRAM_THEME" "$TEMPLATES/typst-template.typ" <<'PY'
 import sys, re, subprocess, pathlib, platform, json
 src, build, keep_h1, cfgpath, cli_accent = sys.argv[1], pathlib.Path(sys.argv[2]), sys.argv[3] == "1", sys.argv[4], sys.argv[5]
 cli_diagram_theme = sys.argv[6]   # theme name from --diagram-theme, "" when not given
-default_typ = pathlib.Path(sys.argv[7])   # bundled template — the theme-token source
+theme_typ = pathlib.Path(sys.argv[7])   # theme-token source (typst-template.typ)
 
 def parse_flat(text):
     # Flat `key: value` pairs — no PyYAML dependency. Skips blanks/comments and
@@ -407,7 +407,7 @@ if diagram_theme == "accent":
         found = dict(re.findall(r'#let\s+([a-z-]+)\s*=\s*rgb\("(#[0-9A-Fa-f]{3,8})"\)', text))
         return {k: found.get(k, v) for k, v in FALLBACK.items()}
 
-    t = tokens(default_typ)
+    t = tokens(theme_typ)
     ink, heading_ink = t["ink"], t["heading-ink"]
     hairline, surface = t["hairline"], t["surface"]
     paper = "#FFFFFF"   # the page itself — not a token, Typst never names it
