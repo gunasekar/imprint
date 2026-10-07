@@ -19,9 +19,17 @@ config:
   # Line length is a style choice here, not a defect.
   MD013: false
 
-  # The README's snapshot grid uses <img> for sizing/centering; front matter uses
-  # <!-- … --> comments. Inline HTML is deliberate.
+  # The README's snapshot grid uses <img> for sizing/centering. Inline HTML is
+  # deliberate.
   MD033: false
+
+  # An imprint document carries BOTH a front-matter `title:` and a matching `# H1`,
+  # on purpose: the H1 keeps the .md a readable standalone document (on GitHub, in an
+  # editor), and imprint — like Quarto's filter — strips it at render time precisely
+  # because it duplicates the title. Without this, MD025 reads the front-matter title
+  # as a first H1 and calls the body's H1 a second one.
+  MD025:
+    front_matter_title: ""
 
   # ASCII diagrams and layout blocks use bare ``` fences with no language.
   MD040: false
@@ -31,5 +39,5 @@ config:
   MD036: false
 
   # Not every file is an article: the /imprint skill (skills/imprint/SKILL.md) has
-  # YAML front matter and no H1, and other docs lead with an <!-- front matter --> comment.
+  # YAML front matter and no H1.
   MD041: false

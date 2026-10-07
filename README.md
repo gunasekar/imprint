@@ -1,9 +1,3 @@
-<!--
-title: "imprint"
-subtitle: "Branded, typeset documents from Markdown"
-description: "Turn a Markdown file into a branded, typeset PDF — cover page, running header and footer, and a reusable house style — with one command."
-category: "Documentation"
--->
 # imprint
 
 Turn Markdown into **branded, typeset PDFs** — the specs, design docs, and reports
@@ -220,12 +214,11 @@ Resolution order: `--profile` → `$IMPRINT_CONFIG` → `IMPRINT_PROFILE` →
 
 ## Metadata: front matter or flags
 
-Per-document metadata lives in **front matter** at the very top of the `.md`.
-The preferred form is an HTML comment (invisible in every Markdown viewer);
-a `--- … ---` YAML fence also works.
+Per-document metadata lives in a **YAML front-matter fence** at the very top of the
+`.md` — the same block pandoc, Quarto, Jekyll, and Hugo read.
 
 ```markdown
-<!--
+---
 title: "Q2 Architecture Review"
 subtitle: "Managed-Kafka Rollout"
 description: "How the platform ingests, validates, and routes events."
@@ -238,9 +231,17 @@ logo: "logo.png"
 logo_height: 52
 cover: true
 confidential: false
--->
+---
 # Q2 Architecture Review
 ```
+
+It is **real YAML**, parsed by pandoc itself — so booleans, numbers, lists, quoting,
+and comments all behave exactly as they do in every other Markdown tool. imprint has
+no YAML dialect of its own.
+
+> **Watch the `#`.** In YAML an unquoted `#` starts a comment, so `accent: #2563EB`
+> is an *empty* value. Quote hex colors: `accent: "#2563EB"`. imprint stops with an
+> error rather than render the wrong color.
 
 Every value resolves by precedence: **CLI flag > front matter > config > default**.
 The first group below is **document metadata** (front matter / flags only); the

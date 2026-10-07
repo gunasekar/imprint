@@ -1,4 +1,4 @@
-<!--
+---
 title:        "imprint CI smoke test"
 subtitle:     "A render that must always succeed"
 description:  "A minimal document that exercises the pandoc -> typst render path without Mermaid, so CI stays deterministic and headless-Chromium-free."
@@ -11,7 +11,7 @@ accent:       "#2563EB"
 font_body:    "Source Sans 3"
 font_head:    "IBM Plex Sans"
 font_mono:    "JetBrains Mono"
--->
+---
 # Render smoke test
 
 This fixture deliberately avoids Mermaid so the render needs only pandoc,

@@ -34,10 +34,13 @@ Mermaid, `brew install mermaid-cli`. On Linux: install pandoc ≥ 3 from its
 ## How it fits together
 
 `imprint` is a single bash wrapper. It reads a config file (rendering settings:
-theme + default toggles) and the source `.md`'s front matter — an `<!-- … -->`
-comment block (preferred) or a `--- … ---` fence. Config contributes only the
-render keys; the front matter supplies document metadata and may override the
-render defaults; CLI flags override everything. An inline python3 preprocessor
+theme + default toggles) and the source `.md`'s front matter — a standard
+`--- … ---` YAML fence. Both are real YAML, parsed by **pandoc** (already a hard
+dependency) rather than by imprint, so there is no bespoke dialect and no pip
+package; see [ADR 0009](docs/decisions/0009-yaml-front-matter.md). Config
+contributes only the render keys; the front matter supplies document metadata and
+may override the render defaults; CLI flags override everything. An inline python3
+preprocessor
 copies local images into a build dir, pre-renders Mermaid blocks to SVG, and
 rewrites native constructs (page breaks); the wrapper resolves and copies any
 document logo. Then pandoc → Typst typesets the PDF against one template,

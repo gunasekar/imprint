@@ -17,6 +17,11 @@
 #
 # Every value is a DEFAULT. A document's front matter or a CLI flag overrides it.
 # All keys are optional; imprint renders fine with no config at all.
+#
+# This is real YAML, parsed by pandoc — the same parser that reads a document's front
+# matter. So quote hex colors: an unquoted `#` starts a YAML comment, which would make
+# `accent: #2563EB` an empty value. imprint stops with an error rather than silently
+# render the wrong color.
 
 # --- Theme ---
 accent:        "#2563EB"     # the single accent color (technical blue). Try #1D4ED8, #4F46E5, #0D9488 …
@@ -37,7 +42,7 @@ font_mono:     "JetBrains Mono"
 # resolved relative to THIS config file (so keep the asset next to your config, or
 # use an absolute path). A document overrides it in front matter (resolved relative
 # to the .md), drops it with `logo: none`, or pass --no-logo for one run.
-# logo:         "logo.svg"           # cover + running-header mark
+# logo:   "logo.svg"           # cover + running-header mark
 # logo_dark_bg: "logo-dark-bg.svg"   # logo for a dark background; used only on the gradient cover
 # logo_height:  40                   # cover logo height, in pt
 

@@ -1,4 +1,4 @@
-<!--
+---
 # Front matter — this document's own metadata. See the README section
 # "Metadata: front matter or flags" for every key, and config.yaml for house
 # style (accent, fonts, logo). This sample doubles as a render test: a believable
@@ -9,12 +9,12 @@ subtitle:       "v2 — At-least-once delivery with retries"
 description:    "How Switchboard accepts internal events and delivers them as signed webhooks to subscriber endpoints — with retries, exponential backoff, and a dead-letter queue."
 author:         "Platform Team"
 footer_text:    "Switchboard"
-date:           "June 2026"
+date:        "June 2026"
 category:       "Engineering"
 cover:          true
 cover_style:    gradient
 confidential:   true
--->
+---
 # Switchboard — Webhook Delivery Service
 
 > **Purpose.** Switchboard is the service that turns internal domain events into

@@ -28,11 +28,16 @@ INPUT.md ────┘                                      │
 A single `python3` heredoc inside `imprint` does all source-level work on a
 throwaway build copy — the original `.md` is never touched:
 
-- **Config + front matter merge.** Reads the config file (flat `key: value`) for
-  **house-style settings** — the keys in `PDF_CONFIG_KEYS` (accent, fonts, the
-  logo, and cover/confidential defaults). The document's front matter layers on
-  top and is the sole source of document metadata (title, author, footer text, …).
-  Both are parsed by the same tiny flat-key parser — no PyYAML. The config file is
+- **Config + front matter merge.** Reads the config file for **house-style
+  settings** — the keys in `PDF_CONFIG_KEYS` (accent, fonts, the logo, and
+  cover/confidential defaults). The document's front matter layers on top and is
+  the sole source of document metadata (title, author, footer text, …). Both are
+  **real YAML**, and neither is parsed by imprint: pandoc is already a hard
+  dependency and ships a YAML parser, so imprint shells out to it
+  (`pandoc --template='$meta-json$'`) and reads the result with stdlib `json`. That
+  costs no new dependency — still no PyYAML, still no pip — and buys exactly pandoc's
+  semantics, which are exactly Quarto's, so there is no imprint YAML dialect to drift.
+  See [ADR 0009](decisions/0009-yaml-front-matter.md). The config file is
   chosen by the bash wrapper before this step, which supports per-house-style
   **profiles** (`--profile NAME` / `IMPRINT_PROFILE` → `profiles/NAME.yaml`); see
   [ADR 0006](decisions/0006-org-profiles.md). Logo paths resolve by origin here —

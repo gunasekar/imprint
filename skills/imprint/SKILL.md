@@ -7,9 +7,9 @@ disable-model-invocation: true
 
 Prepare the Markdown file at `$ARGUMENTS` for rendering with **imprint** — the
 deterministic Markdown → PDF tool, installed as the `imprint` command on your PATH.
-imprint reads front matter (an HTML-comment block, or a `---` fence) for cover/
-footer metadata and restyles a handful of native Markdown constructs; this skill
-edits the file in place to add those.
+imprint reads a standard YAML front-matter fence (`---`) for cover/footer metadata
+and restyles a handful of native Markdown constructs; this skill edits the file in
+place to add those.
 
 ## imprint's conventions (the spec — injected from the installed version)
 
@@ -22,9 +22,10 @@ source of truth for Steps 1–2.
 
 ## Step 1: Add front matter
 
-Insert the metadata block at the very top of the file as an **HTML comment**
-(`<!-- … -->`, on its own lines) — imprint reads it, but every Markdown viewer
-hides it, unlike a `---` fence which GitHub and VS Code render. Infer each value
+Insert the metadata block at the very top of the file as a **YAML front-matter
+fence** (`---` on its own line, the keys, then `---`) — the standard block pandoc,
+Quarto, Jekyll, and Hugo all read. It is real YAML, so quote any hex color
+(`accent: "#2563EB"`): an unquoted `#` starts a YAML comment. Infer each value
 from the document and **state every inferred value**. Use the keys from the
 injected spec above (omit any that don't apply — imprint omits unset optionals);
 the guidance for the common ones:
