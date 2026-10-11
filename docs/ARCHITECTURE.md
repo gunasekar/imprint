@@ -159,12 +159,12 @@ and produces reproducible output — which is the entire point of imprint.
 ## Repo layout
 
 ```
-imprint                     # the bash driver (the whole CLI)
+imprint                   # the bash driver (the whole CLI)
 templates/default.typ     # the one layout template
 assets/fonts/             # bundled TTFs, embedded by Typst
 config.example.yaml       # committed placeholder config
 config.yaml               # your personal config (gitignored)
-skills/imprint/SKILL.md     # optional Claude Code /imprint skill
+skills/imprint/SKILL.md   # optional Claude Code /imprint skill
 examples/sample.md        # the bundled demo document
 docs/                     # this file + decision records
 ```
